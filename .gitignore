@@ -1,0 +1,70 @@
+# -----------------------
+# Python
+# -----------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+.envrc
+
+# -----------------------
+# Flask / Local config
+# -----------------------
+instance/
+*.db
+*.sqlite3
+
+# -----------------------
+# Logs
+# -----------------------
+*.log
+
+# -----------------------
+# OS junk
+# -----------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------
+# IDE / Editor
+# -----------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# -----------------------
+# Build / dist
+# -----------------------
+build/
+dist/
+*.egg-info/
+
+# -----------------------
+# Secrets / config
+# -----------------------
+.env
+config.json
+secrets.json
+
+# -----------------------
+# Node (if you ever add frontend tooling)
+# -----------------------
+node_modules/
+
+# -----------------------
+# Render / deployment
+# -----------------------
+
+# -----------------------
+# Project Black-Tape Data (CRITICAL)
+# -----------------------
+.vault_cache/
+uploads/
+temp/
+*.json
+*.zip
+*.csv

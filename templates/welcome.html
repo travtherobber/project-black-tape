@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="dark">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT BLACK-TAPE // ENTRANCE</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/welcome.css') }}">
+</head>
+
+<body class="welcome-screen">
+
+    <div class="welcome-container">
+        <!-- Scifi Decor Corners -->
+        <div class="scifi-decor decor-tl"></div>
+        <div class="scifi-decor decor-tr"></div>
+        <div class="scifi-decor decor-bl"></div>
+        <div class="scifi-decor decor-br"></div>
+
+        <div class="glitch-wrapper">
+            <h1 class="glitch" data-text="PROJECT_BLACK-TAPE">PROJECT_BLACK-TAPE</h1>
+        </div>
+
+        <p class="blink-text">> INITIALIZING_REDLINE_PROTOCOL...</p>
+
+        <button id="enter-btn" onclick="enterSystem()">[ ENTER_SYSTEM ]</button>
+    </div>
+
+    <script>
+        /**
+         * Triggers the swipe-up animation defined in welcome.css
+         * and then routes the user to the Flask dashboard route.
+         */
+        function enterSystem() {
+            // Add the swipe-out class to the body
+            document.body.classList.add('swipe-out');
+
+            // Wait 600ms (matching the CSS transition) before the Flask redirect
+            setTimeout(() => {
+                window.location.href = "{{ url_for('dashboard') }}";
+            }, 600);
+        }
+
+        /**
+         * Tactical convenience: Allows hitting the 'Enter' key
+         * to trigger the boot sequence.
+         */
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                enterSystem();
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,344 @@
+/* ============================================================
+   PROJECT BLACK-TAPE // REDLINE
+   chat.css - Advanced Tactical Analysis UI (SCIFI OVERHAUL)
+   ============================================================ */
+
+:root {
+    /* Scifi Palette Mapping (Swapped) */
+    --inbound-bg: rgba(26, 1, 33, 0.8); /* Dark Purple base */
+    --outbound-bg: rgba(0, 46, 46, 0.6); /* Dark Cyan base */
+    --border-scifi: rgba(191, 0, 255, 0.3);
+}
+
+/* ============================================================
+   LAYOUT ARCHITECTURE
+   ============================================================ */
+
+.chat-view-container {
+    display: flex;
+    height: 100vh;
+    background: linear-gradient(var(--bg-scifi-1) 50%, var(--bg-scifi-2) 50%);
+    background-size: 100% 4px;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+}
+
+/* ============================================================
+   CONTACTS SIDEBAR
+   ============================================================ */
+
+.contacts-panel {
+    width: 280px;
+    background: var(--bg-scifi-1);
+    border-right: 1px solid var(--glow-purple);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.search-bar {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-scifi);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.terminal-input {
+    width: 100%;
+    background: var(--btn-scifi-1);
+    border: 1px solid var(--glow-purple);
+    color: var(--glow-violet);
+    padding: 10px;
+    font-size: 0.75rem;
+    outline: none;
+    margin-top: 8px;
+    font-family: inherit;
+    box-shadow: inset 0 0 5px var(--glow-purple);
+}
+
+.contact-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.contact-card {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border-scifi);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.contact-card:hover {
+    background: rgba(191, 0, 255, 0.05);
+    border-left-color: var(--glow-violet);
+}
+
+.contact-card.active {
+    background: var(--btn-scifi-1);
+    border-left-color: var(--glow-purple);
+    box-shadow: inset 10px 0 20px -10px var(--glow-purple);
+}
+
+.contact-name {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--accent-gold);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-shadow: 0 0 2px var(--accent-gold); /* Reduced from 5px */
+}
+
+.contact-meta {
+    display: block;
+    font-size: 0.6rem;
+    color: var(--text-base);
+    letter-spacing: 1px;
+}
+
+/* ============================================================
+   MESSAGE STREAM (FEED)
+   ============================================================ */
+
+.main-feed {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at center, var(--bg-scifi-2) 0%, var(--bg-scifi-1) 100%);
+}
+
+.feed-controls {
+    padding: 15px 30px;
+    background: var(--bg-scifi-1); /* Fully opaque scifi background */
+    border-bottom: 1px solid var(--glow-purple);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+}
+
+#chatViewerContainer {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* --- TACTICAL MESSAGE BLOCKS --- */
+
+.date-header {
+    align-self: center;
+    font-size: 0.65rem;
+    color: var(--accent-orange);
+    padding: 30px 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    position: relative;
+    width: 100%;
+    text-align: center;
+    text-shadow: 0 0 3px var(--accent-orange); /* Reduced from 8px */
+}
+
+.date-header::before,
+.date-header::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 30%;
+    height: 1px;
+    background: var(--glow-purple);
+    box-shadow: 0 0 5px var(--glow-purple);
+}
+
+.message-block {
+    max-width: 75%;
+    padding: 15px 20px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    position: relative;
+    animation: scanlineIn 0.4s ease-out;
+    border-radius: 4px;
+}
+
+/* TARGET / INCOMING */
+.incoming {
+    align-self: flex-start;
+    background: var(--inbound-bg);
+    border: 1px solid var(--glow-mint);
+    border-left: 4px solid var(--glow-mint);
+    color: var(--text-base);
+    box-shadow: 0 0 10px rgba(127, 255, 212, 0.1);
+}
+
+/* USER / OUTBOUND */
+.outbound {
+    align-self: flex-end;
+    background: var(--outbound-bg);
+    border: 1px solid var(--glow-purple);
+    border-right: 4px solid var(--glow-purple);
+    color: var(--glow-violet);
+    text-align: right;
+    box-shadow: 0 0 10px rgba(191, 0, 255, 0.1);
+}
+
+.message-content {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.timestamp {
+    display: block;
+    font-size: 0.6rem;
+    margin-top: 10px;
+    opacity: 0.6;
+    letter-spacing: 1px;
+    font-family: 'Courier New', monospace;
+    color: var(--text-base);
+}
+
+/* --- SYSTEM ALERTS --- */
+
+.status-msg {
+    text-align: center;
+    margin: auto;
+    color: var(--accent-gold);
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+/* ============================================================
+   FLOATING TACTICAL CONTROLS
+   ============================================================ */
+
+.floating-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    position: absolute;
+    top: 15px;
+    right: 30px;
+    z-index: 102;
+}
+
+.fab-group {
+    display: flex;
+    align-items: center;
+    background: var(--btn-scifi-1); /* Solid base color */
+    background-image: linear-gradient(var(--btn-scifi-1) 50%, var(--btn-scifi-2) 50%);
+    background-size: 100% 2px;
+    border: 1px solid var(--glow-purple);
+    border-radius: 50px;
+    padding: 0 5px; /* Reduced padding to avoid overflow */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    width: 45px; /* Start as a circle */
+    height: 45px; /* Lock height to stay circular */
+    box-shadow: 0 0 10px var(--glow-mint);
+    backdrop-filter: blur(10px);
+}
+
+.fab-group.expanded {
+    width: auto; /* Allow expansion based on content */
+    max-width: 400px;
+    border-color: var(--glow-violet);
+    box-shadow: 0 0 15px var(--glow-violet), 0 0 10px var(--glow-mint);
+}
+
+.fab-btn {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--glow-violet);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    text-shadow: 0 0 2px var(--glow-violet);
+}
+
+.fab-content {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    padding: 0 15px;
+    white-space: nowrap;
+    width: 0; /* No width when collapsed */
+    overflow: hidden;
+}
+
+.fab-group.expanded .fab-content {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+    width: auto; /* Expand to fit content */
+}
+
+.fab-content input.terminal-input {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    width: 200px;
+    margin: 0; /* Remove margins that cause sticking out */
+    padding: 5px 0;
+}
+
+.sort-options button {
+    background: transparent;
+    border: 1px solid var(--border-scifi);
+    color: var(--text-base);
+    font-family: inherit;
+    font-size: 0.65rem;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sort-options button:hover,
+.sort-options button.active {
+    color: var(--glow-violet);
+    border-color: var(--glow-violet);
+    text-shadow: 0 0 2px var(--glow-violet); /* Reduced from 5px */
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .contacts-panel {
+        background: var(--bg-scifi-1);
+    }
+}
+
+.message-highlight {
+    border-color: var(--accent-gold) !important;
+    box-shadow: 0 0 20px var(--accent-gold);
+    z-index: 10;
+}
+
+/* ============================================================
+   ANIMATIONS & SCROLLBAR
+   ============================================================ */
+
+#chatViewerContainer::-webkit-scrollbar {
+    width: 3px;
+}
+
+#chatViewerContainer::-webkit-scrollbar-thumb {
+    background: var(--glow-purple);
+}
+
+#chatViewerContainer::-webkit-scrollbar-thumb:hover {
+    background: var(--glow-violet);
+}

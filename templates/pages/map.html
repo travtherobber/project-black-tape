@@ -1,0 +1,490 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<style>
+    .map-page-wrapper {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 40px);
+        gap: 20px;
+    }
+
+    .main-map-layout {
+        display: flex;
+        flex-grow: 1;
+        gap: 20px;
+        min-height: 0;
+    }
+
+    /* Side Panel for Day Filters */
+    .chrono-sidebar {
+        width: 300px; /* Wider for much larger text */
+        background: #0d0d0d;
+        border: 1px solid var(--glow-purple);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .sidebar-header {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        border-bottom: 2px solid #222;
+        padding-bottom: 15px;
+    }
+
+    /* View Toggle */
+    .view-toggle-group {
+        display: flex;
+        background: #000;
+        border: 2px solid #333;
+        padding: 4px;
+    }
+
+    .view-toggle-btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 0.8rem; /* Increased */
+        text-align: center;
+        cursor: pointer;
+        color: #666;
+        transition: all 0.2s;
+        font-weight: bold;
+    }
+
+    .view-toggle-btn.active {
+        background: var(--btn-scifi-1);
+        color: var(--glow-mint);
+        box-shadow: inset 0 0 10px rgba(127, 255, 212, 0.3);
+    }
+
+    .scroll-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding-right: 5px;
+    }
+
+    .day-list, .point-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .day-item, .point-item {
+        padding: 15px;
+        border: 2px solid #1a1a1a;
+        font-size: 1.1rem; /* Significantly Increased */
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #eee; /* High Contrast */
+        font-family: 'Courier New', monospace;
+        background: #050505;
+        font-weight: bold;
+    }
+
+    .day-item:hover, .point-item:hover {
+        border-color: var(--glow-mint);
+        color: var(--glow-mint);
+        background: #111;
+        transform: translateX(5px);
+    }
+
+    .day-item.active {
+        background: rgba(191, 0, 255, 0.2);
+        border-color: var(--glow-purple);
+        color: var(--glow-violet);
+        box-shadow: 0 0 15px rgba(191, 0, 255, 0.3);
+    }
+
+    .point-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .point-time {
+        color: var(--accent-orange);
+        font-weight: 900;
+        font-size: 1.2rem; /* Large Time */
+    }
+
+    .point-meta {
+        font-size: 0.9rem; /* Large Date/Coords */
+        opacity: 0.8;
+        color: #888;
+    }
+
+    .map-container-card {
+        flex-grow: 1;
+        background: #000;
+        border: 2px solid var(--glow-purple);
+        box-shadow: 0 0 20px rgba(191, 0, 255, 0.2);
+        position: relative;
+    }
+
+    #map-canvas {
+        height: 100%;
+        width: 100%;
+    }
+
+    .intel-box-card {
+        height: 180px; /* Taller */
+        background: #0d0d0d;
+        border: 2px solid var(--accent-orange);
+        display: flex;
+        flex-direction: column;
+        padding: 25px;
+    }
+
+    .intel-header {
+        border-bottom: 2px solid #222;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .intel-content {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 40px;
+    }
+
+    .intel-item { display: flex; flex-direction: column; gap: 10px; }
+    .intel-label { font-size: 0.9rem; color: #777; text-transform: uppercase; letter-spacing: 2px; } /* Increased */
+    .intel-value { font-size: 1.4rem; color: var(--glow-mint); font-family: 'Courier New', monospace; font-weight: 900; } /* Large Values */
+
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: #000;
+        padding: 10px 20px;
+        border: 2px solid #222;
+    }
+
+    .toggle-container input { cursor: pointer; scale: 1.5; }
+    
+    .label-micro {
+        font-size: 1rem; /* Significantly larger headers */
+        font-weight: bold;
+    }
+
+    .stat-value {
+        font-size: 1.5rem; /* Larger count */
+        font-weight: 900;
+    }
+
+    /* Scrollbar Styling for Visibility */
+    .scroll-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    .scroll-container::-webkit-scrollbar-track {
+        background: #000;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
+        background: var(--glow-purple);
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-page-wrapper">
+    <header class="telemetry-row" style="margin-bottom: 0;">
+        <div class="system-clock-group">
+            <span class="label-micro" style="color: var(--accent-orange);">GEOSPATIAL_INTEL</span>
+            <div class="digital-clock" style="font-size: 1.5rem;">SIGNAL_MAP_RECON</div>
+        </div>
+        
+        <div class="toggle-container">
+            <input type="checkbox" id="path-toggle" onchange="toggleChronoPath()">
+            <label for="path-toggle" class="label-micro" style="cursor: pointer; margin: 0; color: var(--glow-purple);">DRAW_CHRONO_PATH</label>
+        </div>
+
+        <div class="event-stats">
+            <span class="label-micro">VISUAL_LOCK</span>
+            <span class="stat-value" id="point-count" style="color: var(--glow-mint);">0 PACKETS</span>
+        </div>
+    </header>
+
+    <div class="main-map-layout">
+        <aside class="chrono-sidebar">
+            <div class="sidebar-header">
+                <span class="label-micro" style="color: var(--glow-purple);">CHRONO_FILTERS</span>
+                <div class="view-toggle-group">
+                    <div id="toggle-days" class="view-toggle-btn active" onclick="switchSidebarView('days')">DAY_INDEX</div>
+                    <div id="toggle-points" class="view-toggle-btn" onclick="switchSidebarView('points')">SIGNAL_LOG</div>
+                </div>
+            </div>
+
+            <div class="scroll-container">
+                <div class="day-list" id="dayList">
+                    <!-- Days populated here -->
+                </div>
+                <div class="point-list" id="pointList" style="display: none;">
+                    <!-- Chronological points populated here -->
+                </div>
+            </div>
+
+            <button class="selector-pill" onclick="clearDayFilters()" style="font-size: 0.9rem; width: 100%; height: 50px; margin-top: 15px; font-weight: bold;">
+                [ CLEAR_FILTERS ]
+            </button>
+        </aside>
+
+        <div class="map-container-card">
+            <div id="map-canvas"></div>
+        </div>
+    </div>
+
+    <div class="intel-box-card">
+        <div class="intel-header">
+            <span class="label-micro" style="color: var(--accent-orange); font-size: 1.1rem;">[ POINT_INTEL_ANALYSIS ]</span>
+            <span id="intel-status" style="font-size: 0.9rem; color: #555; font-weight: bold;">AWAITING_SIGNAL_SELECTION...</span>
+        </div>
+        <div class="intel-content" id="intel-display">
+            <div class="intel-item">
+                <span class="intel-label">CHRONO_STAMP</span>
+                <span class="intel-value" id="intel-time">--:--:--</span>
+            </div>
+            <div class="intel-item">
+                <span class="intel-label">COORDINATES</span>
+                <span class="intel-value" id="intel-coords">0.000, 0.000</span>
+            </div>
+            <div class="intel-item">
+                <span class="intel-label">SOURCE_ID</span>
+                <span class="intel-value" id="intel-source">N/A</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+    let allPoints = [];
+    let selectedDays = new Set();
+    let showPath = false;
+    let sidebarView = 'days'; 
+    let markerMap = new Map();
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        initMap(0, 0, 2);
+        setTimeout(() => {
+            if (tacticalMap) tacticalMap.invalidateSize();
+        }, 500);
+        
+        await refreshGPSData();
+    });
+
+    async function refreshGPSData() {
+        try {
+            const response = await fetch('/api/gps');
+            const result = await response.json();
+
+            if (result.status === "SUCCESS") {
+                allPoints = result.payload
+                    .map(p => ({
+                        ...p,
+                        lat: parseFloat(p.lat),
+                        lon: parseFloat(p.lon)
+                    }))
+                    .filter(p => !isNaN(p.lat) && !isNaN(p.lon));
+
+                allPoints.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                populateDayList();
+                renderTacticalView();
+            }
+        } catch (err) {
+            console.error("GPS Load Error:", err);
+        }
+    }
+
+    function switchSidebarView(view) {
+        sidebarView = view;
+        document.getElementById('toggle-days').classList.toggle('active', view === 'days');
+        document.getElementById('toggle-points').classList.toggle('active', view === 'points');
+        
+        document.getElementById('dayList').style.display = view === 'days' ? 'flex' : 'none';
+        document.getElementById('pointList').style.display = view === 'points' ? 'flex' : 'none';
+        
+        if (view === 'points') {
+            populatePointList();
+        }
+    }
+
+    function populateDayList() {
+        const list = document.getElementById('dayList');
+        if (!list) return;
+        list.innerHTML = "";
+        
+        const days = [...new Set(allPoints
+            .filter(p => p.timestamp && p.timestamp !== "2000-01-01 00:00:00")
+            .map(p => {
+                const converted = (window.convertToLocal || ((t) => t))(p.timestamp);
+                return converted.split(' ')[0];
+            })
+        )].sort().reverse(); 
+        
+        days.forEach(day => {
+            const item = document.createElement('div');
+            item.className = 'day-item';
+            if (selectedDays.has(day)) item.classList.add('active');
+            item.innerText = day;
+            item.onclick = () => toggleDayFilter(day, item);
+            list.appendChild(item);
+        });
+    }
+
+    function populatePointList() {
+        const list = document.getElementById('pointList');
+        if (!list) return;
+        list.innerHTML = "";
+
+        const filtered = getFilteredPoints();
+        const convert = window.convertToLocal || ((t) => t);
+
+        filtered.forEach(pt => {
+            const localTs = convert(pt.timestamp);
+            const item = document.createElement('div');
+            item.className = 'point-item';
+            
+            // Format time with AM/PM for list readability
+            const timeParts = localTs.split(' ');
+            const dateStr = timeParts[0];
+            const timeStr = timeParts[1] + (timeParts[2] ? ' ' + timeParts[2] : '');
+
+            item.innerHTML = `
+                <span class="point-time">${timeStr}</span>
+                <span class="point-meta">${dateStr}</span>
+                <span class="point-meta">${pt.lat.toFixed(4)}, ${pt.lon.toFixed(4)}</span>
+            `;
+            item.onclick = () => focusPoint(pt);
+            list.appendChild(item);
+        });
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div class="status-msg" style="font-size:1rem; padding:20px;">NO_SIGNALS_IN_FILTER</div>`;
+        }
+    }
+
+    function focusPoint(pt) {
+        if (!tacticalMap) return;
+        
+        const latLng = [pt.lat, pt.lon];
+        tacticalMap.setView(latLng, 18, { animate: true });
+        
+        const localTs = (window.convertToLocal || ((t) => t))(pt.timestamp);
+        updateIntelBox(pt, localTs);
+
+        const markerKey = `${pt.lat},${pt.lon},${pt.timestamp}`;
+        const marker = markerMap.get(markerKey);
+        if (marker) {
+            marker.openPopup();
+        }
+    }
+
+    function toggleDayFilter(day, element) {
+        if (selectedDays.has(day)) {
+            selectedDays.delete(day);
+            element.classList.remove('active');
+        } else {
+            selectedDays.add(day);
+            element.classList.add('active');
+        }
+        renderTacticalView();
+        if (sidebarView === 'points') populatePointList();
+    }
+
+    function clearDayFilters() {
+        selectedDays.clear();
+        document.querySelectorAll('.day-item').forEach(i => i.classList.remove('active'));
+        renderTacticalView();
+        if (sidebarView === 'points') populatePointList();
+    }
+
+    function toggleChronoPath() {
+        showPath = document.getElementById('path-toggle').checked;
+        renderTacticalView();
+    }
+
+    function getFilteredPoints() {
+        return selectedDays.size === 0 
+            ? allPoints 
+            : allPoints.filter(p => {
+                const converted = (window.convertToLocal || ((t) => t))(p.timestamp);
+                return selectedDays.has(converted.split(' ')[0]);
+            });
+    }
+
+    function renderTacticalView() {
+        if (!tacticalMap) return;
+        clearTacticalMap();
+        markerMap.clear();
+        
+        const filtered = getFilteredPoints();
+        document.getElementById('point-count').innerText = `${filtered.length} PACKETS`;
+        
+        if (filtered.length === 0) return;
+
+        const bounds = [];
+        const convert = window.convertToLocal || ((t) => t);
+
+        filtered.forEach(pt => {
+            const localTs = convert(pt.timestamp);
+            const marker = addTacticalMarker(pt.lat, pt.lon, `TIME: ${localTs}`, 'system');
+            
+            if (marker) {
+                marker.on('click', () => updateIntelBox(pt, localTs));
+                markerMap.set(`${pt.lat},${pt.lon},${pt.timestamp}`, marker);
+            }
+            bounds.push([pt.lat, pt.lon]);
+        });
+
+        if (showPath) {
+            drawChronologicalPath(filtered);
+        }
+
+        if (bounds.length > 0 && selectedDays.size > 0) {
+            try {
+                tacticalMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+            } catch (e) {
+                console.error("FitBounds error:", e);
+            }
+        }
+        
+        tacticalMap.invalidateSize();
+    }
+
+    function updateIntelBox(pt, localTs) {
+        const status = document.getElementById('intel-status');
+        if (status) {
+            status.innerText = "SIGNAL_LOCKED";
+            status.style.color = "var(--glow-mint)";
+        }
+        
+        const timeEl = document.getElementById('intel-time');
+        const coordsEl = document.getElementById('intel-coords');
+        const sourceEl = document.getElementById('intel-source');
+
+        if (timeEl) timeEl.innerText = localTs;
+        if (coordsEl) coordsEl.innerText = `${pt.lat.toFixed(6)}, ${pt.lon.toFixed(6)}`;
+        if (sourceEl) sourceEl.innerText = pt.source.toUpperCase();
+    }
+
+    window.addEventListener('timezoneChanged', () => {
+        populateDayList(); // Re-populate days because their labels might change
+        renderTacticalView();
+        if (sidebarView === 'points') populatePointList();
+    });
+</script>
+{% endblock %}

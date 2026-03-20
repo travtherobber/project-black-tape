@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: project-blacktape
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: BLACKTAPE_CACHE_TTL
+        value: "3600"
+      - key: PYTHON_VERSION
+        value: "3.11.0"

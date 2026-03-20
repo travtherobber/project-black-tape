@@ -1,0 +1,236 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/home.css') }}">
+<style>
+    /* Force background transparency to reveal canvas */
+    html, body {
+        background-color: #0a0014 !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    #bg-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .system-content {
+        background: transparent !important;
+    }
+
+    .dashboard-wrapper {
+        position: relative;
+        z-index: 10;
+        background: transparent !important;
+    }
+
+    /* Emergency visibility check for the ingestion module */
+    .card-unit.ingestion-focus {
+        border: 2px solid #bf00ff !important;
+        box-shadow: 0 0 25px rgba(191, 0, 255, 0.6) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<canvas id="bg-canvas"></canvas>
+<div class="dashboard-wrapper">
+
+    <!-- TELEMETRY HEADER -->
+    <header class="telemetry-row">
+        <div class="system-clock-group">
+            <span class="label-micro" id="time-header">Current Time - UTC</span>
+            <div class="digital-clock" id="live-clock">00:00:00 AM</div>
+        </div>
+
+        <div class="event-stats">
+            <span class="label-micro">System Status</span>
+            <span class="stat-value" id="status-indicator" style="color: var(--neon-green);">[ READY ]</span>
+        </div>
+    </header>
+
+    <!-- MAIN GRID -->
+    <div class="grid-container">
+
+        <!-- DATA INGESTION MODULE -->
+        <section class="card-unit ingestion-focus">
+            <h3 class="card-heading">Data Uploader</h3>
+            <div class="ingestion-zone" id="ingestion-zone"
+                style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; border: 1px dashed #222; margin: 10px; position: relative;">
+                <p class="label-micro" id="ingestion-prompt" style="margin-bottom: 25px; opacity: 0.6;">AWAITING_JSON_SIGNAL_INPUT...</p>
+
+                <!-- Progress UI (Hidden by default) -->
+                <div id="upload-progress-container" style="display: none; width: 100%; max-width: 300px; margin-bottom: 20px;">
+                    <div style="height: 2px; background: #111; width: 100%; position: relative;">
+                        <div id="upload-progress-bar" style="height: 100%; background: var(--neon-green); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--neon-green);"></div>
+                    </div>
+                    <p class="label-micro" id="upload-status-text" style="margin-top: 10px; text-align: center; color: var(--neon-green);">UPLOADING_PACKETS...</p>
+                </div>
+
+                <!-- Hidden Input -->
+                <input type="file" id="upload-input" onchange="handleHomeUpload(this)" hidden>
+
+                <!-- Visible Button -->
+                <button class="selector-pill" id="upload-btn" onclick="document.getElementById('upload-input').click()"
+                    style="min-width: 250px; padding: 15px; font-weight: bold; letter-spacing: 2px;">
+                    [ Data Upload ]
+                </button>
+            </div>
+        </section>
+
+        <!-- DISTRIBUTION ANALYSIS -->
+        <section class="card-unit">
+            <h3 class="card-heading">Loaded</h3>
+            <div class="analysis-frame">
+                <div class="bar-wrapper">
+                    <div class="data-bar highlight" id="bar-chats" style="height: 0%;"></div>
+                    <span class="label-micro" style="font-size: 0.5rem; margin-top: 8px;">CHATS</span>
+                </div>
+                <div class="bar-wrapper">
+                    <div class="data-bar" id="bar-gps" style="height: 0%;"></div>
+                    <span class="label-micro" style="font-size: 0.5rem; margin-top: 8px;">GPS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- LIVE STREAM LOG -->
+        <section class="card-unit" style="grid-column: span 2;">
+            <h3 class="card-heading">SYSTEM_LOG_RELAY</h3>
+            <div class="terminal-stream" id="system-log">
+                <div class="stream-line">> [ OK ] REDLINE_OS_LOADED</div>
+                <div class="stream-line">> [ INFO ] AWAITING_INGESTION_COMMAND...</div>
+            </div>
+        </section>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script>
+    /**
+     * Clock and Timezone Management
+     */
+    function updateClock() {
+        const now = new Date();
+        const tz = localStorage.getItem('blacktape_timezone') || 'UTC';
+        
+        try {
+            const time = new Intl.DateTimeFormat('en-US', {
+                timeZone: tz,
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            }).format(now);
+            
+            const el = document.getElementById('live-clock');
+            if (el) el.innerText = time;
+            
+            const headerEl = document.getElementById('time-header');
+            if (headerEl) headerEl.innerText = `Current Time - ${tz}`;
+        } catch (e) {
+            console.error("TZ Sync Error:", e);
+        }
+    }
+
+    /**
+     * Procedural Background Logic
+     */
+    function initProceduralBg() {
+        const canvas = document.getElementById('bg-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const stripeColor = '#ba42ff';
+            const numStripes = 40 + Math.floor(Math.random() * 30);
+
+            for (let i = 0; i < numStripes; i++) {
+                ctx.beginPath();
+                ctx.strokeStyle = stripeColor;
+                ctx.lineCap = 'round';
+                ctx.lineWidth = 3 + Math.random() * 12;
+                ctx.globalAlpha = 0.4 + Math.random() * 0.5;
+
+                let x = Math.random() * canvas.width;
+                let y = Math.random() * canvas.height;
+                ctx.moveTo(x, y);
+
+                const segments = 2 + Math.floor(Math.random() * 4);
+                for (let j = 0; j < segments; j++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const length = 100 + Math.random() * 600;
+                    const x2 = x + Math.cos(angle) * length;
+                    const y2 = y + Math.sin(angle) * length;
+
+                    if (Math.random() > 0.5) {
+                        const cx = x + (Math.random() - 0.5) * 400;
+                        const cy = y + (Math.random() - 0.5) * 400;
+                        ctx.quadraticCurveTo(cx, cy, x2, y2);
+                    } else {
+                        ctx.lineTo(x2, y2);
+                    }
+                    x = x2; y = y2;
+                }
+                ctx.stroke();
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(resize, 100);
+        });
+        resize();
+    }
+
+    /**
+     * System Initialization
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        // Start background and clock
+        initProceduralBg();
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Historical data check
+        const localVault = localStorage.getItem('blacktape_vault');
+        if (localVault) {
+            try {
+                const vault = JSON.parse(localVault);
+                if (vault.chats) {
+                    const chatBar = document.getElementById('bar-chats');
+                    if (chatBar) chatBar.style.height = "85%";
+                    if (window.logToTerminal) logToTerminal("Historical chat signals synchronized.", "OK");
+                }
+                if (vault.gps_count > 0) {
+                    const gpsBar = document.getElementById('bar-gps');
+                    if (gpsBar) gpsBar.style.height = "75%";
+                    if (window.logToTerminal) logToTerminal(`${vault.gps_count} Geospatial packets identified in vault.`, "OK");
+                }
+            } catch(e) {
+                console.error("Vault Recovery Error:", e);
+            }
+        }
+    });
+
+    // Reactive Updates
+    window.addEventListener('timezoneChanged', () => {
+        updateClock();
+        if (window.logToTerminal) logToTerminal("Clock aligned to new Chrono-Zone.", "RECON");
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT BLACK-TAPE // REDLINE</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block page_css %}{% endblock %}
+</head>
+
+<body>
+
+    <nav class="sidebar">
+        <div class="logo-section">
+            <div class="hazard-icon">☣</div>
+            <div class="label-micro" style="letter-spacing: 3px;">BLACK-TAPE</div>
+        </div>
+
+        <div class="timezone-module">
+            <span class="label-micro" style="color: var(--text-dim);">CHRONO_ZONE_SELECT</span>
+            <select id="timezone-select" onchange="updateGlobalTimezone(this.value)">
+                <option value="UTC">UTC (SYSTEM_DEFAULT)</option>
+                <option value="America/New_York">EST/EDT (NEW_YORK)</option>
+                <option value="America/Chicago">CST/CDT (CHICAGO)</option>
+                <option value="America/Denver">MST/MDT (DENVER)</option>
+                <option value="America/Los_Angeles">PST/PDT (L.A.)</option>
+                <option value="Europe/London">GMT/BST (LONDON)</option>
+                <option value="Europe/Paris">CET/CEST (PARIS)</option>
+                <option value="Asia/Tokyo">JST (TOKYO)</option>
+                <option value="Australia/Sydney">AEST/AEDT (SYDNEY)</option>
+            </select>
+        </div>
+
+        <ul class="tool-list">
+            <li class="{{ 'active' if request.path == url_for('dashboard') }}">
+                <a href="{{ url_for('dashboard') }}">⌂ DASHBOARD</a>
+            </li>
+            <li class="{{ 'active' if request.path == url_for('chat_view') }}">
+                <a href="{{ url_for('chat_view') }}">💬 CHAT_VIEWER</a>
+            </li>
+            <li class="{{ 'active' if request.path == url_for('map_view') }}">
+                <a href="{{ url_for('map_view') }}">🛰 MAP_VIEWER</a>
+            </li>
+
+            <li class="nav-separator"></li>
+
+            <li>
+                <button onclick="purgeVault()" class="clear-btn">
+                    [ Purge Signal Vault ]
+                </button>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div id="status-indicator" class="label-micro">● SYSTEM_STABLE</div>
+            <div class="label-micro" style="font-size: 0.5rem; color: #444;">VER: 2.6.3_REDLINE</div>
+        </div>
+    </nav>
+
+    <main class="system-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script>
+        /**
+         * Global Timezone Management
+         */
+        function updateGlobalTimezone(tz) {
+            localStorage.setItem('blacktape_timezone', tz);
+
+            // Notify all active modules (Chat/Map) to refresh their timestamps
+            window.dispatchEvent(new CustomEvent('timezoneChanged', { detail: { timezone: tz } }));
+
+            if (window.logToTerminal) {
+                logToTerminal(`Temporal alignment shifted: ${tz}`, "RECON");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Restore saved timezone preference
+            const savedTz = localStorage.getItem('blacktape_timezone') || 'UTC';
+            const select = document.getElementById('timezone-select');
+            if (select) select.value = savedTz;
+
+            console.log("[System] Layout Handshake Verified.");
+        });
+    </script>
+
+    {% block page_js %}{% endblock %}
+
+</body>
+
+</html>

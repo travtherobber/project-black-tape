@@ -1,0 +1,245 @@
+/* ============================================================
+   PROJECT BLACK-TAPE // REDLINE
+   style.css - Global Core & Industrial Variables (SCIFI OVERHAUL)
+   ============================================================ */
+
+:root {
+    /* Scifi Backgrounds (Now Dark Purple) */
+    --bg-scifi-1: #0d001a;
+    --bg-scifi-2: #14011a;
+    
+    /* Scifi Buttons (Now Dark Cyan) */
+    --btn-scifi-1: #002e2e;
+    --btn-scifi-2: #004d4d;
+    
+    /* Scifi Highlights & Glows */
+    --glow-purple: #bf00ff;
+    --glow-violet: #e066ff;
+    --glow-mint: #7fffd4;
+    
+    /* Design Accents */
+    --accent-gold: #ffd700;
+    --accent-orange: #fcb026;
+    
+    /* Text Specs */
+    --text-base: #808080;
+    --text-glow: #ffffff;
+}
+
+/* GLOBAL SCANLINE PATTERN */
+.scanline-bg {
+    background: linear-gradient(var(--bg-scifi-1) 50%, var(--bg-scifi-2) 50%);
+    background-size: 100% 4px;
+}
+
+.static-pattern {
+    background-color: var(--bg-scifi-1);
+    background-image: 
+        linear-gradient(90deg, rgba(191, 0, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(rgba(191, 0, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(45deg, transparent 48%, rgba(191, 0, 255, 0.08) 49%, rgba(191, 0, 255, 0.08) 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, rgba(191, 0, 255, 0.08) 49%, rgba(191, 0, 255, 0.08) 51%, transparent 52%);
+    background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
+}
+
+/* MANDATORY DARK RESET */
+html {
+    background-color: var(--bg-scifi-1);
+}
+
+body {
+    background: linear-gradient(var(--bg-scifi-1) 50%, var(--bg-scifi-2) 50%);
+    background-size: 100% 4px;
+    color: var(--text-base);
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* SIDEBAR SKELETON */
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: rgba(18, 0, 33, 0.98);
+    border-right: 1px solid var(--glow-purple);
+    box-shadow: 5px 0 15px rgba(191, 0, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.sidebar::before {
+    content: "";
+    height: 4px;
+    width: 100%;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--accent-gold),
+        var(--accent-gold) 10px,
+        #000 10px,
+        #000 20px
+    );
+}
+
+.logo-section {
+    padding: 40px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--glow-purple);
+}
+
+.hazard-icon {
+    color: var(--accent-gold);
+    filter: drop-shadow(0 0 8px var(--accent-gold));
+}
+
+.tool-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.tool-list li a {
+    display: block;
+    padding: 18px 25px;
+    text-decoration: none;
+    color: var(--text-base);
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(191, 0, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* ACTIVE & HOVER STATES */
+.tool-list li a:hover,
+.tool-list li.active a {
+    background: var(--btn-scifi-1);
+    color: var(--glow-violet);
+    border-left: 4px solid var(--glow-purple);
+    box-shadow: inset 5px 0 10px rgba(191, 0, 255, 0.2);
+    text-shadow: 0 0 5px var(--glow-violet);
+    padding-left: 30px;
+}
+
+/* BUTTON GLOBAL STYLE */
+button, .selector-pill {
+    background: linear-gradient(var(--btn-scifi-1) 50%, var(--btn-scifi-2) 50%) !important;
+    background-size: 100% 2px !important;
+    border: 1px solid var(--glow-purple) !important;
+    color: var(--text-base) !important;
+    box-shadow: 0 4px 10px var(--glow-mint) !important;
+    transition: all 0.3s ease !important;
+}
+
+button:hover, .selector-pill:hover {
+    border-color: var(--glow-violet) !important;
+    box-shadow: 0 0 15px var(--glow-violet), 0 6px 15px var(--glow-mint) !important;
+    transform: translateY(-2px);
+}
+
+/* MAIN CONTENT WRAPPER */
+main {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* GLOBAL UTILITIES */
+.label-micro {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent-orange);
+}
+
+/* --- Tactical Metadata Overlay --- */
+.metadata-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.96);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.metadata-card {
+    background: #0d0d0d;
+    border: 1px solid var(--accent-orange, #ff6a00);
+    box-shadow: 0 0 20px rgba(255, 106, 0, 0.3);
+    width: 80%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.card-header h3 {
+    margin: 0;
+    color: var(--accent-orange, #ff6a00);
+    font-size: 1.2rem;
+}
+
+.card-header button {
+    background: none;
+    border: 1px solid #ff6a00;
+    color: #ff6a00;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.card-body {
+    overflow-y: auto;
+    color: #00ff00; /* Neon Matrix style */
+}
+
+.intel-group {
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.intel-group label {
+    color: #888;
+}
+
+.card-body pre {
+    background: #050505;
+    padding: 10px;
+    border: 1px solid #222;
+    font-size: 0.8rem;
+    overflow-x: auto;
+}
+
+.message-block {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.message-block:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.sender-name {
+    font-size: 0.6rem;
+    color: #ff6a00;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}

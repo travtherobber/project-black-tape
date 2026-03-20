@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="chat-view-container">
+
+    <!-- Contacts Panel -->
+    <aside class="contacts-panel">
+        <div class="contact-list" id="contactList">
+            <div class="status-msg" style="padding: 20px; opacity: 0.3; font-size: 0.7rem;">
+                NO_TARGETS_LOADED
+            </div>
+        </div>
+    </aside>
+
+    <!-- Chat Feed -->
+    <main class="main-feed">
+        <header class="feed-controls">
+            <div class="feed-info">
+                <span class="label-micro">ANALYSIS_MODE: CHAT_RECON</span>
+                <span id="active-target-id"
+                    style="color: var(--neon-green); margin-left: 10px; font-size:0.7rem;"></span>
+            </div>
+
+            <!-- Floating Controls -->
+            <div class="floating-controls">
+                <!-- Search FAB -->
+                <div class="fab-group" id="search-fab-group">
+                    <button class="fab-btn" onclick="toggleFab('search-fab-group')">
+                        <span class="fab-icon">🔍</span>
+                    </button>
+                    <div class="fab-content">
+                        <input type="text" id="contactSearch" class="terminal-input" placeholder="SEARCH_ID...">
+                    </div>
+                </div>
+
+                <!-- Sort FAB -->
+                <div class="fab-group" id="sort-fab-group">
+                    <button class="fab-btn" onclick="toggleFab('sort-fab-group')">
+                        <span class="fab-icon">↕</span>
+                    </button>
+                    <div class="fab-content sort-options">
+                        <button onclick="changeSort('newest')">[ NEWEST ]</button>
+                        <button onclick="changeSort('oldest')">[ OLDEST ]</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="chatViewerContainer">
+            <div class="stream-placeholder"
+                style="display:flex; height:100%; align-items:center; justify-content:center; opacity:0.2;">
+                <p>> AWAITING_SIGNAL_HANDOFF...</p>
+            </div>
+        </div>
+    </main>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}
