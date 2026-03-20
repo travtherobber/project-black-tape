@@ -6,3 +6,4 @@ requests
 beautifulsoup4
 lxml
 pydantic
+google-re2
