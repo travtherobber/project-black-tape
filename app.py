@@ -6,6 +6,7 @@ import threading
 import diskcache
 from flask import Flask, render_template, request, jsonify, session
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 
 # Core Project Modules
 from core.orchestrator import Orchestrator
@@ -18,17 +19,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger("BLACK-TAPE")
 
+# 1. Load local .env (if it exists)
+load_dotenv()
+
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "blacktape_industrial_99")
+
+# 2. Priority Handshake: Looks for Render Env, then .env, then Falls back
+# This replaces the 3 conflicting lines from your previous snippet.
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'blacktape_industrial_99')
+
+# 3. File & Upload Limits
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # --- STABILITY LAYER: DISKCACHE ---
+# Ensure .vault_cache exists and is configured for production
 cache_dir = os.path.join(os.getcwd(), '.vault_cache')
+os.makedirs(cache_dir, exist_ok=True)
 vault_cache = diskcache.Cache(cache_dir)
 TTL_SECONDS = int(os.getenv("BLACKTAPE_CACHE_TTL", 3600))
 
+# Initialize the engine
 orchestrator = Orchestrator()
 
 def background_ingestion(job_id, filename, file_path):
