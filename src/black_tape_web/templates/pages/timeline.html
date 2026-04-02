@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/timeline.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="timeline-page">
+    <section class="timeline-toolbar hud-panel">
+        <div class="panel-frame"></div>
+        <div class="timeline-filter-bar">
+            <div class="timeline-filter-group">
+                <button class="timeline-filter-chip active" data-kind="all" type="button" onclick="setTimelineKindFilter('all')">All</button>
+                <button class="timeline-filter-chip" data-kind="chat" type="button" onclick="setTimelineKindFilter('chat')">Chats</button>
+                <button class="timeline-filter-chip" data-kind="gps" type="button" onclick="setTimelineKindFilter('gps')">GPS</button>
+                <button class="timeline-filter-chip" data-kind="google" type="button" onclick="setTimelineKindFilter('google')">Google</button>
+                <button class="timeline-filter-chip" data-kind="friend" type="button" onclick="setTimelineKindFilter('friend')">Friends</button>
+            </div>
+            <div class="timeline-filter-group timeline-filter-search">
+                <input id="timeline-search-input" class="timeline-search-input" type="search" placeholder="Search events, labels, or details">
+                <button class="selector-pill" type="button" onclick="resetTimelineFilters()">Reset</button>
+            </div>
+            <div class="timeline-filter-group timeline-summary-inline">
+                <div class="timeline-toolbar-meta"><span class="micro-label">Days</span> <strong id="timeline-day-count">0</strong></div>
+                <div class="timeline-toolbar-meta"><span class="micro-label">Events</span> <strong id="timeline-total-count">0</strong></div>
+                <div class="timeline-toolbar-meta" id="timeline-range-label">No timeline data loaded.</div>
+                <div class="timeline-toolbar-meta" id="timeline-filter-count">0 visible</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="timeline-layout">
+        <article class="hud-panel timeline-day-browser">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Day Cards</p>
+                    <h2>Daily Activity</h2>
+                </div>
+            </header>
+            <div class="timeline-day-grid" id="timeline-day-grid"></div>
+        </article>
+
+        <aside class="hud-panel timeline-day-detail">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Day Detail</p>
+                    <h2>Selected Day</h2>
+                </div>
+            </header>
+            <div class="timeline-day-detail-body" id="timeline-day-detail-body">
+                <div class="timeline-empty-state">Select a day card to inspect its 24-hour activity and event sequence.</div>
+            </div>
+        </aside>
+    </section>
+</section>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/timeline.js') }}"></script>
+{% endblock %}

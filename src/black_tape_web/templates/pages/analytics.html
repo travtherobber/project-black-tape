@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="analytics-page">
+    <section class="analytics-overview">
+        <article class="hud-panel analytics-stat-card">
+            <div class="panel-frame"></div>
+            <p class="micro-label">Messages</p>
+            <strong id="analytics-messages">0</strong>
+        </article>
+        <article class="hud-panel analytics-stat-card">
+            <div class="panel-frame"></div>
+            <p class="micro-label">Conversations</p>
+            <strong id="analytics-conversations">0</strong>
+        </article>
+        <article class="hud-panel analytics-stat-card">
+            <div class="panel-frame"></div>
+            <p class="micro-label">Map Points</p>
+            <strong id="analytics-gps">0</strong>
+        </article>
+        <article class="hud-panel analytics-stat-card">
+            <div class="panel-frame"></div>
+            <p class="micro-label">Google Signals</p>
+            <strong id="analytics-google-signals">0</strong>
+        </article>
+    </section>
+
+    <section class="analytics-grid">
+        <article class="hud-panel analytics-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Chats</p>
+                    <h2>Top Conversations</h2>
+                </div>
+            </header>
+            <div class="analytics-list" id="analytics-top-conversations"></div>
+        </article>
+
+        <article class="hud-panel analytics-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Map</p>
+                    <h2>Layer Distribution</h2>
+                </div>
+            </header>
+            <div class="analytics-list" id="analytics-gps-layers"></div>
+        </article>
+
+        <article class="hud-panel analytics-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Google</p>
+                    <h2>Activity Patterns</h2>
+                </div>
+            </header>
+            <div class="analytics-list" id="analytics-google-activity"></div>
+        </article>
+
+        <article class="hud-panel analytics-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Friends</p>
+                    <h2>Relationship Summary</h2>
+                </div>
+            </header>
+            <div class="analytics-list" id="analytics-friends-summary"></div>
+        </article>
+
+        <article class="hud-panel analytics-panel analytics-panel-wide">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Map</p>
+                    <h2>Busiest Days</h2>
+                </div>
+            </header>
+            <div class="analytics-list" id="analytics-busiest-days"></div>
+        </article>
+    </section>
+</section>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

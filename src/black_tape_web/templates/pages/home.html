@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/home.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+    <section class="dashboard-grid">
+        <article class="hud-panel upload-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Upload</p>
+                    <h2>Data Upload</h2>
+                </div>
+                <button class="ghost-button" id="ingest-button" type="button">Select Parcel</button>
+            </header>
+
+            <label class="dropzone" id="dropzone" for="ingest-file">
+                <input id="ingest-file" type="file" hidden multiple>
+                <span class="bt-loader bt-loader--tiles dropzone-loader" id="upload-loader" aria-hidden="true" hidden>
+                    <span class="bt-loader__tile"></span>
+                    <span class="bt-loader__tile"></span>
+                    <span class="bt-loader__tile"></span>
+                    <span class="bt-loader__tile"></span>
+                </span>
+                <span class="dropzone-title">Drop archive files or click to upload</span>
+                <span class="dropzone-subtitle">One or more exports can be processed together into the current vault.</span>
+                <span class="dropzone-status" id="dropzone-status">READY_FOR_SIGNAL_HANDOFF</span>
+            </label>
+        </article>
+
+        <article class="hud-panel feed-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Activity</p>
+                    <h2>Recent Updates</h2>
+                </div>
+                <span class="panel-badge" id="feed-state">IDLE</span>
+            </header>
+
+            <div class="feed-stream" id="telemetry-feed"></div>
+        </article>
+
+        <article class="hud-panel counters-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Vault Summary</p>
+                    <h2>Current Contents</h2>
+                </div>
+            </header>
+
+            <div class="counter-grid">
+                <article class="counter-card">
+                    <span class="micro-label">Messages</span>
+                    <strong id="messages-total">0000</strong>
+                </article>
+                <article class="counter-card">
+                    <span class="micro-label">Conversations</span>
+                    <strong id="conversations-total">00</strong>
+                </article>
+                <article class="counter-card">
+                    <span class="micro-label">GPS Points</span>
+                    <strong id="gps-total">0000</strong>
+                </article>
+                <article class="counter-card">
+                    <span class="micro-label">Vault State</span>
+                    <strong id="vault-state">IDLE</strong>
+                </article>
+            </div>
+
+            <div class="counter-meta">
+                <div><span class="micro-label">Job ID</span><strong id="hero-job-id">NO LOCK</strong></div>
+                <div><span class="micro-label">Source</span><strong id="hero-source-file">NO DATASET</strong></div>
+                <div><span class="micro-label">Last Update</span><strong id="feed-summary-update">NO LINK</strong></div>
+            </div>
+        </article>
+    </section>
+</section>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

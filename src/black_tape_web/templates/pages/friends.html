@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/friends.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="friends-page">
+    <section class="friends-summary hud-panel">
+        <div class="panel-frame"></div>
+        <header class="panel-header">
+            <div>
+                <p class="micro-label">Friends</p>
+                <h2>Relationship Summary</h2>
+            </div>
+        </header>
+
+        <div class="friends-summary-grid">
+            <article class="summary-card">
+                <span class="micro-label">Unique Profiles</span>
+                <strong id="friends-unique-count">0</strong>
+            </article>
+            <article class="summary-card">
+                <span class="micro-label">Total Records</span>
+                <strong id="friends-record-count">0</strong>
+            </article>
+            <article class="summary-card">
+                <span class="micro-label">Friends</span>
+                <strong id="friends-direct-count">0</strong>
+            </article>
+            <article class="summary-card">
+                <span class="micro-label">Removed</span>
+                <strong id="friends-removed-count">0</strong>
+            </article>
+            <article class="summary-card">
+                <span class="micro-label">Blocked</span>
+                <strong id="friends-blocked-count">0</strong>
+            </article>
+            <article class="summary-card">
+                <span class="micro-label">Requests Sent</span>
+                <strong id="friends-requests-count">0</strong>
+            </article>
+            <article class="summary-card">
+                <span class="micro-label">Snapscore</span>
+                <strong id="friends-snapscore">0</strong>
+            </article>
+        </div>
+    </section>
+
+    <section class="friends-layout">
+        <article class="friends-browser hud-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Directory</p>
+                    <h2>Profiles</h2>
+                </div>
+                <input class="friends-search" id="friends-search" type="search" placeholder="Search username or display name">
+            </header>
+
+            <div class="friends-category-bar" id="friends-category-bar"></div>
+            <div class="friends-list" id="friends-list"></div>
+        </article>
+
+        <aside class="friends-inspector hud-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Inspector</p>
+                    <h2>Selected Profile</h2>
+                </div>
+            </header>
+
+            <div class="friends-inspector-body" id="friends-inspector">
+                <div class="friends-empty-state">Select a record to inspect its timestamps, source, and relationship bucket.</div>
+            </div>
+        </aside>
+    </section>
+</section>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/friends.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>BLACK-TAPE</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block page_css %}{% endblock %}
+</head>
+<body data-page="{{ page_name|default('dashboard') }}">
+    {% if page_name == 'login' %}
+        {% block auth_content %}{% endblock %}
+    {% else %}
+    <canvas id="abyss-canvas" aria-hidden="true"></canvas>
+    <div class="abyss-vignette" aria-hidden="true"></div>
+
+    <div class="shell">
+        <aside class="sidebar-shell">
+            <div class="sidebar-header">
+                <div class="systems-glyph" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="title-stack">
+                    <p class="micro-label">Data Review Workspace</p>
+                    <h1>BLACK-TAPE</h1>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="micro-label">Navigation</div>
+                <nav class="sidebar-nav">
+                    <a class="sidebar-link{{ ' is-active' if page_name == 'dashboard' else '' }}" href="{{ url_for('ui.dashboard') }}">Dashboard</a>
+                    <a class="sidebar-link{{ ' is-active' if page_name == 'chat' else '' }}" href="{{ url_for('ui.chats') }}">Chats</a>
+                    <a class="sidebar-link{{ ' is-active' if page_name == 'map' else '' }}" href="{{ url_for('ui.map_view') }}">Map</a>
+                    <a class="sidebar-link{{ ' is-active' if page_name == 'friends' else '' }}" href="{{ url_for('ui.friends') }}">Friends</a>
+                    <a class="sidebar-link{{ ' is-active' if page_name == 'timeline' else '' }}" href="{{ url_for('ui.timeline') }}">Timeline</a>
+                    <a class="sidebar-link{{ ' is-active' if page_name == 'analytics' else '' }}" href="{{ url_for('ui.analytics') }}">Analytics</a>
+                    <a class="sidebar-link{{ ' is-active' if page_name == 'explore' else '' }}" href="{{ url_for('ui.explore') }}">Explore</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <label class="timezone-picker">
+                    <span class="micro-label">Timezone</span>
+                    <select id="timezone-select">
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">New York</option>
+                        <option value="America/Chicago">Chicago</option>
+                        <option value="America/Denver">Denver</option>
+                        <option value="America/Los_Angeles">Los Angeles</option>
+                        <option value="Europe/London">London</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="sidebar-section sidebar-readout-group">
+                <div class="micro-label">Vault Retention</div>
+                <div class="sidebar-readout retention-readout">
+                    <span id="vault-retention-label">No active vault</span>
+                    <strong id="vault-retention-countdown">--:--</strong>
+                    <span class="sidebar-readout-note" id="vault-retention-note">Uploaded data is removed automatically.</span>
+                </div>
+                <button class="ghost-button" id="vault-retention-reset" type="button">Reset Retention</button>
+            </div>
+
+            <div class="sidebar-footer">
+                {% if auth_required %}
+                <form method="post" action="{{ url_for('ui.logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="ghost-button sidebar-purge" type="submit">Sign Out</button>
+                </form>
+                {% endif %}
+                <button class="ghost-button sidebar-purge" id="global-purge-button" type="button">Purge Vault</button>
+            </div>
+        </aside>
+
+        <main class="workspace">
+            <header class="page-rail">
+                <div>
+                    <p class="micro-label">View</p>
+                    <h2 class="page-title">{{ page_name|default('dashboard')|upper }}</h2>
+                </div>
+            </header>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block page_js %}{% endblock %}
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/explore.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="explore-page">
+    <section class="hud-panel explore-toolbar">
+        <div class="panel-frame"></div>
+        <div class="explore-toolbar-row">
+            <div>
+                <p class="micro-label">Catch-All</p>
+                <h2>Residual Vault Data</h2>
+            </div>
+            <input id="explore-search-input" class="explore-search-input" type="search" placeholder="Search identity, Google signals, or other records">
+        </div>
+    </section>
+
+    <section class="explore-grid">
+        <article class="hud-panel explore-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Identity</p>
+                    <h2>Markers</h2>
+                </div>
+            </header>
+            <div class="explore-list" id="explore-identity"></div>
+        </article>
+
+        <article class="hud-panel explore-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Google</p>
+                    <h2>Signals</h2>
+                </div>
+            </header>
+            <div class="explore-list" id="explore-google"></div>
+        </article>
+
+        <article class="hud-panel explore-panel">
+            <div class="panel-frame"></div>
+            <header class="panel-header">
+                <div>
+                    <p class="micro-label">Other</p>
+                    <h2>Unclassified</h2>
+                </div>
+            </header>
+            <div class="explore-list" id="explore-other"></div>
+        </article>
+    </section>
+</section>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/explore.js') }}"></script>
+{% endblock %}

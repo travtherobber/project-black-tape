@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="chat-view-container">
+    <aside class="contacts-panel">
+        <div class="contact-list" id="contactList">
+            <div class="status-msg" style="padding: 20px; opacity: 0.3; font-size: 0.7rem;">
+                NO_TARGETS_LOADED
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-feed">
+        <header class="feed-controls">
+            <div class="feed-info">
+                <span class="label-micro">Conversation Review</span>
+                <span id="active-target-id" style="margin-left: 10px; font-size: 0.7rem;"></span>
+            </div>
+        </header>
+
+        <div id="chatViewerContainer">
+            <div class="stream-placeholder" style="display:flex; height:100%; align-items:center; justify-content:center; opacity:0.2;">
+                <p>&gt; AWAITING_SIGNAL_HANDOFF...</p>
+            </div>
+        </div>
+    </main>
+
+    <div class="floating-controls">
+        <div class="fab-group" id="search-fab-group">
+            <button class="fab-btn" type="button" onclick="toggleFab('search-fab-group')">
+                <span class="fab-icon">Search</span>
+            </button>
+            <div class="fab-content">
+                <div class="fab-panel">
+                    <label class="fab-label" for="contactSearch">Search Messages</label>
+                    <input type="text" id="contactSearch" class="terminal-input" placeholder="Search terms">
+                </div>
+            </div>
+        </div>
+
+        <div class="fab-group" id="sort-fab-group">
+            <button class="fab-btn" type="button" onclick="toggleFab('sort-fab-group')">
+                <span class="fab-icon">Filter</span>
+            </button>
+            <div class="fab-content sort-options">
+                <div class="fab-panel">
+                    <div class="fab-label">Sort Messages</div>
+                    <div class="sort-button-row">
+                        <button type="button" onclick="changeSort('newest')">Newest</button>
+                        <button type="button" onclick="changeSort('oldest')">Oldest</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+instance/
+uploads/
+.env
+.env.*
+fixtures/raw/
+fixtures/samples/
+*.zip
+*.sqlite
+*.sqlite3
+*.db
+tmp/

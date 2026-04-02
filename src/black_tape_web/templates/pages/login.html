@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<style>
+    body[data-page="login"] {
+        overflow: hidden;
+    }
+
+    .login-shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .login-panel {
+        width: min(420px, 100%);
+        padding: 24px;
+    }
+
+    .login-copy {
+        color: var(--text-secondary);
+        line-height: 1.7;
+        margin: 0 0 18px;
+    }
+
+    .login-form {
+        display: grid;
+        gap: 12px;
+    }
+
+    .login-form input {
+        padding: 12px 14px;
+        border: 1px solid var(--line-dim);
+        border-radius: 8px;
+        background: rgba(3, 11, 14, 0.44);
+        color: var(--text-primary);
+        font: inherit;
+    }
+
+    .login-error {
+        color: var(--accent-orange);
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<canvas id="abyss-canvas" aria-hidden="true"></canvas>
+<div class="abyss-vignette" aria-hidden="true"></div>
+<main class="login-shell">
+    <section class="hud-panel login-panel">
+        <div class="panel-frame"></div>
+        <header class="panel-header">
+            <div>
+                <p class="micro-label">Access</p>
+                <h2>BLACK-TAPE Login</h2>
+            </div>
+        </header>
+        <div class="page-copy" style="padding: 0;">
+            <p class="login-copy">Enter the deployment password to open the review workspace.</p>
+            <form class="login-form" method="post" action="{{ url_for('ui.login_submit') }}">
+                <input type="hidden" name="next" value="{{ next_path|default('/dashboard') }}">
+                <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+                {% if login_error %}
+                <div class="login-error">{{ login_error }}</div>
+                {% endif %}
+                <button class="ghost-button" type="submit">Enter Workspace</button>
+            </form>
+        </div>
+    </section>
+</main>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

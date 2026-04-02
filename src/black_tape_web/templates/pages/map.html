@@ -1,0 +1,581 @@
+{% extends "layout.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/map.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="map-page-wrapper">
+    <section class="map-toolbar hud-panel">
+        <div class="toolbar-group">
+            <div class="layer-toggle-group">
+                <button id="layer-location-history" class="layer-toggle-btn active" type="button" onclick="toggleMapLayer('location_history')">Snap Location</button>
+                <button id="layer-memories-history" class="layer-toggle-btn active" type="button" onclick="toggleMapLayer('memories_history')">Snap Memories</button>
+                <button id="layer-google-location-history" class="layer-toggle-btn active" type="button" onclick="toggleMapLayer('google_location_history')">Google Location</button>
+                <button id="layer-google-timeline-edits" class="layer-toggle-btn active" type="button" onclick="toggleMapLayer('google_timeline_edits')">Google Timeline Edits</button>
+            </div>
+            <label class="toggle-container" for="path-toggle">
+                <input type="checkbox" id="path-toggle" onchange="toggleChronoPath()">
+                <span>Draw path</span>
+            </label>
+            <label class="toggle-container" for="action-overlay-toggle">
+                <input type="checkbox" id="action-overlay-toggle" onchange="toggleActionOverlay()">
+                <span>Overlay actions on path</span>
+            </label>
+        </div>
+
+        <div class="toolbar-group">
+            <div class="view-toggle-group">
+                <button id="toggle-days" class="view-toggle-btn active" type="button" onclick="switchSidebarView('days')">Day Index</button>
+                <button id="toggle-points" class="view-toggle-btn" type="button" onclick="switchSidebarView('points')">Points</button>
+            </div>
+            <button class="selector-pill" type="button" onclick="selectAllDays()">Select All</button>
+            <button class="selector-pill" type="button" onclick="clearDayFilters()">Clear Filters</button>
+        </div>
+    </section>
+
+    <div class="main-map-layout">
+        <aside class="chrono-sidebar">
+            <div class="micro-label">Filters</div>
+            <div class="sidebar-hint" id="filter-hint">Choose one or more days to render points on the map.</div>
+
+            <div class="scroll-container">
+                <div class="day-list" id="dayList"></div>
+                <div class="point-list" id="pointList" style="display: none;"></div>
+            </div>
+        </aside>
+
+        <div class="map-container-card">
+            <section class="map-hud-overlay">
+                <article class="map-summary-card map-summary-card-primary">
+                    <div class="micro-label">Map</div>
+                    <strong>Location Review</strong>
+                    <p>Switch layers, filter by day, and inspect points with source context.</p>
+                </article>
+                <article class="map-summary-card">
+                    <div class="micro-label">Selected Layers</div>
+                    <strong id="active-layer-label">0 active</strong>
+                </article>
+                <article class="map-summary-card">
+                    <div class="micro-label">Visible Points</div>
+                    <strong id="point-count">0</strong>
+                </article>
+                <article class="map-summary-card">
+                    <div class="micro-label">Selected Days</div>
+                    <strong id="day-filter-count">0</strong>
+                </article>
+            </section>
+            <div id="map-canvas"></div>
+        </div>
+    </div>
+
+    <div class="intel-box-card">
+        <div class="intel-header">
+            <span class="micro-label">Point Details</span>
+            <div class="intel-controls">
+                <button class="selector-pill intel-nav-button" id="prev-point-button" type="button" onclick="stepPointSelection(-1)">Previous</button>
+                <button class="selector-pill intel-nav-button" id="next-point-button" type="button" onclick="stepPointSelection(1)">Next</button>
+                <span id="intel-status">AWAITING_SIGNAL_SELECTION...</span>
+            </div>
+        </div>
+        <div class="intel-content" id="intel-display">
+            <div class="intel-item">
+                <span class="intel-label">Chrono Stamp</span>
+                <span class="intel-value" id="intel-time">--:--:--</span>
+            </div>
+            <div class="intel-item">
+                <span class="intel-label">Coordinates</span>
+                <span class="intel-value" id="intel-coords">0.000, 0.000</span>
+            </div>
+            <div class="intel-item">
+                <span class="intel-label">Source ID</span>
+                <span class="intel-value" id="intel-source">N/A</span>
+            </div>
+            <div class="intel-item">
+                <span class="intel-label">Layer</span>
+                <span class="intel-value" id="intel-layer">N/A</span>
+            </div>
+            <div class="intel-item">
+                <span class="intel-label">Source System</span>
+                <span class="intel-value" id="intel-system">N/A</span>
+            </div>
+            <div class="intel-item">
+                <span class="intel-label">Context</span>
+                <span class="intel-value" id="intel-context">N/A</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+    let allPoints = [];
+    let allTimelineEvents = [];
+    let selectedDays = new Set();
+    let showPath = false;
+    let showActionOverlay = false;
+    let sidebarView = "days";
+    let markerMap = new Map();
+    let activePointKey = "";
+    let selectedLayers = new Set(["location_history", "memories_history", "google_location_history", "google_timeline_edits"]);
+    const layerLabelMap = {
+        location_history: "Snap Location History",
+        memories_history: "Snap Memories History",
+        google_location_history: "Google Location History",
+        google_timeline_edits: "Google Timeline Edits",
+        other: "Other Signals",
+    };
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        if (window.L) {
+            initMap(0, 0, 2);
+            setTimeout(() => {
+                if (window.tacticalMap) {
+                    window.tacticalMap.invalidateSize();
+                }
+            }, 300);
+        } else {
+            document.getElementById("intel-status").textContent = "LEAFLET_UNAVAILABLE";
+        }
+
+        await refreshGPSData();
+        await refreshTimelineData();
+    });
+
+    async function refreshGPSData() {
+        const jobId = localStorage.getItem("blacktape_job_id");
+        const suffix = jobId ? `?job_id=${encodeURIComponent(jobId)}` : "";
+
+        try {
+            const response = await fetch(`/api/gps${suffix}`);
+            const result = await response.json();
+            if (result.status !== "SUCCESS") return;
+
+            allPoints = result.payload
+                .map((point) => ({
+                    ...point,
+                    lat: Number(point.lat),
+                    lon: Number(point.lon),
+                    layer: point.layer || inferPointLayer(point),
+                }))
+                .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon))
+                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            syncAvailableLayers();
+            populateDayList();
+            renderTacticalView();
+        } catch (error) {
+            console.error("GPS Load Error:", error);
+        }
+    }
+
+    async function refreshTimelineData() {
+        const jobId = localStorage.getItem("blacktape_job_id");
+        const suffix = jobId ? `?job_id=${encodeURIComponent(jobId)}` : "";
+
+        try {
+            const response = await fetch(`/api/timeline${suffix}`);
+            const result = await response.json();
+            allTimelineEvents = result.status === "SUCCESS" ? (result.payload || []) : [];
+            renderTacticalView();
+        } catch (error) {
+            console.error("Timeline overlay load error:", error);
+            allTimelineEvents = [];
+        }
+    }
+
+    function inferPointLayer(point) {
+        const source = String(point.source || "").toLowerCase();
+        const system = String(point.source_system || "").toLowerCase();
+        if (system === "google" && source.includes("timeline")) return "google_timeline_edits";
+        if (system === "google" && source.includes("location")) return "google_location_history";
+        if (source.includes("memories")) return "memories_history";
+        if (source.includes("location")) return "location_history";
+        return "other";
+    }
+
+    function hasUnavailableLocation(point) {
+        return Number(point.lat) === 0 && Number(point.lon) === 0;
+    }
+
+    function pointLabel(point) {
+        return hasUnavailableLocation(point)
+            ? "LOCATION INFO UNAVAILABLE"
+            : `${point.lat.toFixed(4)}, ${point.lon.toFixed(4)}`;
+    }
+
+    function syncAvailableLayers() {
+        const available = getAvailableLayers();
+        selectedLayers = new Set([...selectedLayers].filter((layer) => available.has(layer)));
+        if (!selectedLayers.size) {
+            selectedLayers = new Set([...available]);
+        }
+        updateLayerButtons();
+    }
+
+    function getAvailableLayers() {
+        return new Set(allPoints.map((point) => point.layer));
+    }
+
+    function updateLayerButtons() {
+        const available = getAvailableLayers();
+        const layerLabel = document.getElementById("active-layer-label");
+        ["location_history", "memories_history", "google_location_history", "google_timeline_edits"].forEach((layer) => {
+            const button = document.getElementById(`layer-${layer.replaceAll("_", "-")}`);
+            if (!button) return;
+            button.classList.toggle("active", selectedLayers.has(layer));
+            button.disabled = !available.has(layer);
+        });
+        if (layerLabel) {
+            layerLabel.textContent = selectedLayers.size
+                ? `${selectedLayers.size} active`
+                : "0 active";
+        }
+    }
+
+    function toggleMapLayer(layer) {
+        if (!getAvailableLayers().has(layer)) return;
+        if (selectedLayers.has(layer) && selectedLayers.size > 1) {
+            selectedLayers.delete(layer);
+        } else {
+            selectedLayers.add(layer);
+        }
+        updateLayerButtons();
+        renderTacticalView();
+        populateDayList();
+        if (sidebarView === "points") populatePointList();
+    }
+
+    function switchSidebarView(view) {
+        sidebarView = view;
+        document.getElementById("toggle-days").classList.toggle("active", view === "days");
+        document.getElementById("toggle-points").classList.toggle("active", view === "points");
+        document.getElementById("dayList").style.display = view === "days" ? "flex" : "none";
+        document.getElementById("pointList").style.display = view === "points" ? "flex" : "none";
+        if (view === "points") populatePointList();
+    }
+
+    function populateDayList() {
+        const list = document.getElementById("dayList");
+        list.innerHTML = "";
+
+        const convert = window.convertToLocal || ((value) => value);
+        const days = [...new Set(getSelectedLayerPoints().map((point) => convert(point.timestamp).split(" ")[0]))].sort().reverse();
+
+        if (!days.length) {
+            list.innerHTML = `<div class="status-msg" style="padding: 20px;">NO_LAYER_DAYS_AVAILABLE</div>`;
+            return;
+        }
+
+        days.forEach((day) => {
+            const item = document.createElement("div");
+            item.className = "day-item";
+            item.textContent = day;
+            item.classList.toggle("active", selectedDays.has(day));
+            item.onclick = () => toggleDayFilter(day, item);
+            list.appendChild(item);
+        });
+    }
+
+    function populatePointList() {
+        const list = document.getElementById("pointList");
+        list.innerHTML = "";
+
+        const convert = window.convertToLocal || ((value) => value);
+        const filtered = getFilteredVisiblePoints();
+        if (!filtered.length) {
+            list.innerHTML = selectedDays.size
+                ? `<div class="status-msg" style="padding: 20px;">NO_POINTS_FOR_SELECTED_LAYER_SET</div>`
+                : `<div class="status-msg" style="padding: 20px;">SELECT_DAYS_TO_VIEW_POINTS</div>`;
+            return;
+        }
+
+        filtered.forEach((point) => {
+            const localTs = convert(point.timestamp);
+            const item = document.createElement("div");
+            item.className = "point-item";
+            item.dataset.pointKey = pointKey(point);
+            const context = summarizePointContext(point);
+            item.innerHTML = `
+                <span class="point-time">${localTs}</span>
+                <span class="point-meta">${pointLabel(point)}</span>
+                <span class="point-meta">${layerLabelMap[point.layer] || String(point.layer || "").replaceAll("_", " ")}</span>
+                <span class="point-meta">${context}</span>
+                <span class="point-meta">${point.source}</span>
+            `;
+            item.onclick = () => focusPoint(point);
+            list.appendChild(item);
+        });
+        highlightPointListItem();
+    }
+
+    function toggleDayFilter(day, element) {
+        if (selectedDays.has(day)) {
+            selectedDays.delete(day);
+        } else {
+            selectedDays.add(day);
+        }
+        element.classList.toggle("active", selectedDays.has(day));
+        renderTacticalView();
+        if (sidebarView === "points") populatePointList();
+    }
+
+    function clearDayFilters() {
+        selectedDays.clear();
+        document.querySelectorAll(".day-item").forEach((item) => item.classList.remove("active"));
+        renderTacticalView();
+        if (sidebarView === "points") populatePointList();
+    }
+
+    function selectAllDays() {
+        const convert = window.convertToLocal || ((value) => value);
+        selectedDays = new Set(getSelectedLayerPoints().map((point) => convert(point.timestamp).split(" ")[0]));
+        document.querySelectorAll(".day-item").forEach((item) => item.classList.add("active"));
+        renderTacticalView();
+        if (sidebarView === "points") populatePointList();
+    }
+
+    function toggleChronoPath() {
+        showPath = document.getElementById("path-toggle").checked;
+        renderTacticalView();
+    }
+
+    function toggleActionOverlay() {
+        showActionOverlay = document.getElementById("action-overlay-toggle").checked;
+        renderTacticalView();
+    }
+
+    function getFilteredPoints() {
+        const convert = window.convertToLocal || ((value) => value);
+        const layerPoints = getSelectedLayerPoints();
+        if (!selectedDays.size) return [];
+        return layerPoints.filter((point) => selectedDays.has(convert(point.timestamp).split(" ")[0]));
+    }
+
+    function getSelectedLayerPoints() {
+        return allPoints.filter((point) => selectedLayers.has(point.layer));
+    }
+
+    function focusPoint(point) {
+        if (!window.tacticalMap) return;
+        const latLng = [point.lat, point.lon];
+        activePointKey = pointKey(point);
+        updatePointNavigationState();
+        window.tacticalMap.setView(latLng, hasUnavailableLocation(point) ? 4 : 18, { animate: true });
+        updateIntelBox(point, (window.convertToLocal || ((value) => value))(point.timestamp));
+        const marker = markerMap.get(`${point.lat},${point.lon},${point.timestamp}`);
+        if (marker) marker.openPopup();
+        highlightPointListItem();
+    }
+
+    function renderTacticalView() {
+        const filteredCount = getFilteredVisiblePoints().length;
+        document.getElementById("point-count").textContent = String(filteredCount);
+        document.getElementById("day-filter-count").textContent = String(selectedDays.size);
+        document.getElementById("filter-hint").textContent = selectedDays.size
+            ? `${selectedDays.size} day filter${selectedDays.size === 1 ? "" : "s"} active across ${selectedLayers.size} selected layer${selectedLayers.size === 1 ? "" : "s"}.`
+            : "Choose one or more days to render points on the map.";
+        if (!window.tacticalMap) return;
+
+        clearTacticalMap();
+        markerMap.clear();
+
+        const filtered = getFilteredVisiblePoints();
+        if (!filtered.length) {
+            activePointKey = "";
+            document.getElementById("intel-status").textContent = selectedDays.size
+                ? "NO_POINTS_FOR_ACTIVE_FILTER"
+                : "FILTER_REQUIRED";
+            document.getElementById("intel-source").textContent = "No visible point selected";
+            document.getElementById("intel-layer").textContent = [...selectedLayers].map((layer) => layerLabelMap[layer] || layer).join(", ") || "N/A";
+            document.getElementById("intel-system").textContent = "N/A";
+            document.getElementById("intel-context").textContent = "N/A";
+            updatePointNavigationState();
+            return;
+        }
+
+        if (activePointKey && !filtered.some((point) => pointKey(point) === activePointKey)) {
+            activePointKey = "";
+        }
+
+        const bounds = [];
+        const convert = window.convertToLocal || ((value) => value);
+
+        filtered.forEach((point) => {
+            const localTs = convert(point.timestamp);
+            const popupText = hasUnavailableLocation(point)
+                ? `TIME: ${localTs}<br>LOCATION INFO UNAVAILABLE<br>${summarizePointContext(point)}`
+                : `TIME: ${localTs}<br>${point.lat.toFixed(4)}, ${point.lon.toFixed(4)}<br>${summarizePointContext(point)}`;
+            const marker = addTacticalMarker(point.lat, point.lon, popupText, point.layer);
+            if (marker) {
+                marker.on("click", () => focusPoint(point));
+                markerMap.set(`${point.lat},${point.lon},${point.timestamp}`, marker);
+            }
+            bounds.push([point.lat, point.lon]);
+        });
+
+        if (showPath) {
+            drawChronologicalPaths(groupPointsByLayer(filtered));
+            if (showActionOverlay) {
+                renderActionOverlay(filtered);
+            }
+        }
+        if (!activePointKey && bounds.length) {
+            window.tacticalMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+        }
+        updatePointNavigationState();
+        highlightPointListItem();
+    }
+
+    function updateIntelBox(point, localTs) {
+        document.getElementById("intel-status").textContent = "SIGNAL_LOCKED";
+        document.getElementById("intel-time").textContent = localTs;
+        document.getElementById("intel-coords").textContent = hasUnavailableLocation(point)
+            ? "LOCATION INFO UNAVAILABLE"
+            : `${point.lat.toFixed(6)}, ${point.lon.toFixed(6)}`;
+        document.getElementById("intel-layer").textContent = layerLabelMap[point.layer] || String(point.layer || "unknown").toUpperCase();
+        document.getElementById("intel-source").textContent = String(point.source || "UNKNOWN");
+        document.getElementById("intel-system").textContent = String(point.source_system || "unknown").toUpperCase();
+        document.getElementById("intel-context").textContent = summarizePointContext(point);
+    }
+
+    function summarizePointContext(point) {
+        const parts = [];
+        if (point.position_source) parts.push(String(point.position_source).replaceAll("_", " "));
+        if (point.signal_type && point.signal_type !== "history_point") parts.push(String(point.signal_type).replaceAll("_", " "));
+        if (point.activity_type) {
+            const confidence = Number(point.activity_confidence);
+            const label = Number.isFinite(confidence)
+                ? `${point.activity_type.replaceAll("_", " ")} ${Math.round(confidence * 100)}%`
+                : point.activity_type.replaceAll("_", " ");
+            parts.push(label);
+        }
+        if (point.accuracy_m != null && Number.isFinite(Number(point.accuracy_m))) {
+            parts.push(`accuracy ${Number(point.accuracy_m).toFixed(1)}m`);
+        }
+        if (point.altitude_m != null && Number.isFinite(Number(point.altitude_m))) {
+            parts.push(`alt ${Number(point.altitude_m).toFixed(1)}m`);
+        }
+        if (point.wifi_scan_count) {
+            parts.push(`${point.wifi_scan_count} wifi devices`);
+        }
+        if (point.platform) parts.push(String(point.platform));
+        return parts.length ? parts.join(" | ") : "No additional context";
+    }
+
+    function groupPointsByLayer(points) {
+        return points.reduce((groups, point) => {
+            if (!groups[point.layer]) groups[point.layer] = [];
+            groups[point.layer].push(point);
+            return groups;
+        }, {});
+    }
+
+    function getFilteredTimelineOverlayEvents() {
+        if (!selectedDays.size) return [];
+        const convert = window.convertToLocal || ((value) => value);
+        return allTimelineEvents.filter((event) => (
+            event.kind !== "gps" &&
+            selectedDays.has(convert(event.timestamp).split(" ")[0])
+        ));
+    }
+
+    function renderActionOverlay(visiblePoints) {
+        const overlayEvents = getFilteredTimelineOverlayEvents();
+        if (!overlayEvents.length || !visiblePoints.length) return;
+
+        const matched = overlayEvents
+            .map((event) => matchEventToPoint(event, visiblePoints))
+            .filter(Boolean);
+
+        matched.forEach(({ event, point, deltaMinutes }) => {
+            const localTime = (window.convertToLocal || ((value) => value))(event.timestamp);
+            const popup = [
+                `${event.kind.toUpperCase()} :: ${event.label || "signal"}`,
+                `${localTime}`,
+                `${event.summary || "No summary"}`,
+                `Path match delta ${deltaMinutes}m`,
+            ].join("<br>");
+            const marker = addActionMarker(point.lat, point.lon, popup, event.kind);
+            if (marker) {
+                marker.on("click", () => focusPoint(point));
+            }
+        });
+    }
+
+    function matchEventToPoint(event, visiblePoints) {
+        const eventTime = new Date(event.timestamp).getTime();
+        if (!Number.isFinite(eventTime)) return null;
+
+        let bestPoint = null;
+        let bestDelta = Number.POSITIVE_INFINITY;
+        visiblePoints.forEach((point) => {
+            const pointTime = new Date(point.timestamp).getTime();
+            if (!Number.isFinite(pointTime)) return;
+            const delta = Math.abs(pointTime - eventTime);
+            if (delta < bestDelta) {
+                bestDelta = delta;
+                bestPoint = point;
+            }
+        });
+
+        const maxDeltaMs = 1000 * 60 * 90;
+        if (!bestPoint || bestDelta > maxDeltaMs) return null;
+
+        return {
+            event,
+            point: bestPoint,
+            deltaMinutes: Math.round(bestDelta / 60000),
+        };
+    }
+
+    function pointKey(point) {
+        return `${point.lat}|${point.lon}|${point.timestamp}|${point.source || ""}|${point.layer || ""}`;
+    }
+
+    function getFilteredVisiblePoints() {
+        return getFilteredPoints().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    }
+
+    function stepPointSelection(direction) {
+        const filtered = getFilteredVisiblePoints();
+        if (!filtered.length) return;
+
+        let index = filtered.findIndex((point) => pointKey(point) === activePointKey);
+        if (index === -1) {
+            index = direction > 0 ? -1 : 0;
+        }
+
+        const nextIndex = Math.min(filtered.length - 1, Math.max(0, index + direction));
+        focusPoint(filtered[nextIndex]);
+    }
+
+    function updatePointNavigationState() {
+        const filtered = getFilteredVisiblePoints();
+        const previousButton = document.getElementById("prev-point-button");
+        const nextButton = document.getElementById("next-point-button");
+        const activeIndex = filtered.findIndex((point) => pointKey(point) === activePointKey);
+
+        if (previousButton) previousButton.disabled = activeIndex <= 0;
+        if (nextButton) nextButton.disabled = activeIndex === -1 || activeIndex >= filtered.length - 1;
+    }
+
+    function highlightPointListItem() {
+        document.querySelectorAll(".point-item").forEach((item) => {
+            item.classList.toggle("active", item.dataset.pointKey === activePointKey);
+        });
+    }
+
+    window.addEventListener("timezoneChanged", () => {
+        populateDayList();
+        renderTacticalView();
+        if (sidebarView === "points") populatePointList();
+    });
+
+    window.stepPointSelection = stepPointSelection;
+    window.toggleMapLayer = toggleMapLayer;
+    window.toggleActionOverlay = toggleActionOverlay;
+</script>
+{% endblock %}

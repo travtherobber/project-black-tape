@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: black-tape
+    env: python
+    plan: starter
+    healthCheckPath: /health
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -c gunicorn.conf.py run:app
+    autoDeploy: false
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: BLACKTAPE_INSTANCE_ROOT
+        value: /tmp/black-tape-instance
+      - key: BLACKTAPE_CACHE_TTL
+        value: "900"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: GUNICORN_THREADS
+        value: "4"
+      - key: GUNICORN_TIMEOUT
+        value: "120"
+      - key: SECRET_KEY
+        sync: false
+      - key: BLACKTAPE_PASSWORD
+        sync: false
