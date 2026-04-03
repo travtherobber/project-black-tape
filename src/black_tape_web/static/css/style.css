@@ -567,6 +567,10 @@ button {
         overflow: auto;
     }
 
+    #abyss-canvas {
+        display: none;
+    }
+
     .shell {
         height: auto;
         min-height: var(--app-height);
@@ -580,6 +584,31 @@ button {
         grid-template-rows: auto auto auto auto;
         gap: 12px;
         padding: 14px 12px;
+    }
+
+    .sidebar-header {
+        gap: 8px;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        margin: 0 -2px;
+        scrollbar-width: thin;
+    }
+
+    .sidebar-link {
+        flex: 0 0 auto;
+        min-width: max-content;
+        padding: 10px 12px;
+    }
+
+    .sidebar-section,
+    .sidebar-readout-group,
+    .sidebar-footer {
+        gap: 10px;
     }
 
     .panel-header,
@@ -601,8 +630,15 @@ button {
     .sidebar-link,
     .ghost-button,
     .panel-badge {
-        width: 100%;
         font-size: 0.72rem;
+    }
+
+    .ghost-button {
+        width: 100%;
+    }
+
+    .sidebar-footer {
+        align-self: stretch;
     }
 }
 
@@ -621,6 +657,19 @@ button {
 
     .sidebar-readout {
         padding: 10px;
+    }
+
+    .sidebar-shell {
+        padding: 12px 10px;
+    }
+
+    .sidebar-nav {
+        padding-bottom: 2px;
+    }
+
+    .sidebar-link {
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
     }
 
     .page-title {

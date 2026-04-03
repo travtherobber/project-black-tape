@@ -13,6 +13,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from black_tape_web import create_app
+from black_tape_engine.legacy_ingesters.zip_ingestor import ZipIngestor
 
 
 class AppTestCase(unittest.TestCase):
@@ -224,6 +225,31 @@ class AppTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_json()["status"], "ERROR")
+
+    def test_upload_returns_json_when_request_exceeds_size_limit(self):
+        self.app.config["MAX_CONTENT_LENGTH"] = 32
+        with self.client.session_transaction() as session:
+            session["_csrf_token"] = "test-csrf"
+
+        response = self.client.post(
+            "/upload",
+            data={"file": (io.BytesIO(b"x" * 256), "oversized.json")},
+            content_type="multipart/form-data",
+            headers={"X-CSRF-Token": "test-csrf"},
+        )
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(response.get_json()["status"], "ERROR")
+        self.assertIn("size limit", response.get_json()["message"].lower())
+
+    def test_zip_ingestor_accepts_file_path_without_loading_archive_bytes_first(self):
+        archive_path = Path(self.temp_dir.name) / "fixture.zip"
+        archive_path.write_bytes(self.sample_zip_bytes)
+
+        extracted = ZipIngestor().ingest_zip(archive_path)
+
+        self.assertTrue(extracted)
+        self.assertTrue(any(name.endswith("chat_history.json") for name, _data in extracted))
 
     def test_upload_archive_populates_conversations_and_gps(self):
         with self.client.session_transaction() as session:

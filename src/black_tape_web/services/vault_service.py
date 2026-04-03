@@ -14,11 +14,26 @@ from black_tape_engine import BlackTapeEngine, EngineSearch
 
 
 class VaultService:
-    def __init__(self, upload_root: str, cache_root: str, ttl_seconds: int):
+    def __init__(
+        self,
+        upload_root: str,
+        cache_root: str,
+        ttl_seconds: int,
+        max_upload_files: int = 256,
+        max_archive_json_bytes: int = 32 * 1024 * 1024,
+        max_archive_total_bytes: int = 80 * 1024 * 1024,
+    ):
         self.upload_root = upload_root
         self.cache = diskcache.Cache(cache_root)
         self.ttl_seconds = ttl_seconds
-        self.engine = BlackTapeEngine(cache_dir=cache_root, status_ttl=ttl_seconds)
+        self.max_upload_files = max_upload_files
+        self.engine = BlackTapeEngine(
+            cache_dir=cache_root,
+            status_ttl=ttl_seconds,
+            max_files=max_upload_files,
+            max_json_bytes=max_archive_json_bytes,
+            max_total_bytes=max_archive_total_bytes,
+        )
 
     def _purge_expired(self) -> None:
         self.cache.expire()
@@ -26,6 +41,8 @@ class VaultService:
 
     def create_job(self, uploaded_files: list[FileStorage]) -> str:
         self._purge_expired()
+        if len(uploaded_files) > self.max_upload_files:
+            raise ValueError(f"Too many uploaded files. Maximum allowed is {self.max_upload_files}.")
         job_id = uuid.uuid4().hex
         os.makedirs(self.upload_root, exist_ok=True)
         saved_files: list[dict] = []

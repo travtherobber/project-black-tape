@@ -5,6 +5,13 @@ function syncAppHeight() {
 function initAbyssBackground() {
     const canvas = document.getElementById("abyss-canvas");
     if (!canvas) return;
+    const shouldReduceEffects = window.matchMedia("(max-width: 720px)").matches
+        || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        || navigator.connection?.saveData;
+    if (shouldReduceEffects) {
+        canvas.hidden = true;
+        return;
+    }
     const context = canvas.getContext("2d");
     const particles = [];
 

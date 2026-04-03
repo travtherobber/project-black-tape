@@ -20,16 +20,8 @@ class ZipIngestor:
         """
         extracted_files = []
 
-        if hasattr(file_storage, "read"):
-            raw_bytes = file_storage.read()
-        elif isinstance(file_storage, (str, Path)):
-            raw_bytes = Path(file_storage).read_bytes()
-        elif isinstance(file_storage, (bytes, bytearray)):
-            raw_bytes = bytes(file_storage)
-        else:
-            raise TypeError(f"Unsupported zip input type: {type(file_storage)!r}")
-
-        with zipfile.ZipFile(io.BytesIO(raw_bytes)) as z:
+        archive_source = self._resolve_archive_source(file_storage)
+        with zipfile.ZipFile(archive_source) as z:
             json_infos = [info for info in z.infolist() if info.filename.endswith(".json")]
             if len(json_infos) > self.max_files:
                 raise ValueError("Archive contains too many JSON files")
@@ -50,3 +42,13 @@ class ZipIngestor:
                         print(f"[SYSTEM] Failed to parse {file_info.filename} in ZIP: {e}")
         
         return extracted_files
+
+    def _resolve_archive_source(self, file_storage):
+        if hasattr(file_storage, "seek"):
+            file_storage.seek(0)
+            return file_storage
+        if isinstance(file_storage, (str, Path)):
+            return str(file_storage)
+        if isinstance(file_storage, (bytes, bytearray)):
+            return io.BytesIO(bytes(file_storage))
+        raise TypeError(f"Unsupported zip input type: {type(file_storage)!r}")

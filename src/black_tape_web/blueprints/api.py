@@ -31,7 +31,10 @@ def upload_signal():
         if extension not in ALLOWED_UPLOAD_EXTENSIONS:
             return jsonify({"status": "ERROR", "message": "Unsupported file type"}), 400
 
-    job_id = vault_service().create_job(uploaded_files)
+    try:
+        job_id = vault_service().create_job(uploaded_files)
+    except ValueError as exc:
+        return jsonify({"status": "ERROR", "message": str(exc)}), 400
     session["current_job"] = job_id
     return jsonify(
         {

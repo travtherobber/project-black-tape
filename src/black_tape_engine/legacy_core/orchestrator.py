@@ -15,9 +15,20 @@ from black_tape_engine.legacy_scanners.scanner import GenericScanner
 logger = logging.getLogger("BLACK-TAPE.ORCHESTRATOR")
 
 class Orchestrator:
-    def __init__(self, cache_dir=None, status_ttl=3600):
+    def __init__(
+        self,
+        cache_dir=None,
+        status_ttl=3600,
+        max_files=256,
+        max_json_bytes=32 * 1024 * 1024,
+        max_total_bytes=80 * 1024 * 1024,
+    ):
         self.json_ingestor = JSONIngestor()
-        self.zip_ingestor = ZipIngestor()
+        self.zip_ingestor = ZipIngestor(
+            max_files=max_files,
+            max_json_bytes=max_json_bytes,
+            max_total_bytes=max_total_bytes,
+        )
         self.chat_scanner = ChatScanner()
         self.friends_scanner = FriendsScanner()
         self.google_signal_scanner = GoogleSignalScanner()

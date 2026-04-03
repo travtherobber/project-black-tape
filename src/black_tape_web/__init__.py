@@ -6,6 +6,7 @@ from hmac import compare_digest
 
 from dotenv import load_dotenv
 from flask import Flask, redirect, request, session, url_for
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from black_tape_web.blueprints.api import api_bp
 from black_tape_web.blueprints.ui import ui_bp
@@ -28,7 +29,7 @@ def create_app() -> Flask:
     )
 
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY") or secrets.token_hex(32)
-    app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
+    app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("BLACKTAPE_MAX_UPLOAD_BYTES", str(100 * 1024 * 1024)))
     app.config["UPLOAD_ROOT"] = os.path.join(app.instance_path, "uploads")
     app.config["CACHE_ROOT"] = os.path.join(app.instance_path, "vault_cache")
     app.config["BLACKTAPE_CACHE_TTL"] = int(os.getenv("BLACKTAPE_CACHE_TTL", "900"))
@@ -47,6 +48,9 @@ def create_app() -> Flask:
         upload_root=app.config["UPLOAD_ROOT"],
         cache_root=app.config["CACHE_ROOT"],
         ttl_seconds=app.config["BLACKTAPE_CACHE_TTL"],
+        max_upload_files=app.config["MAX_UPLOAD_FILES"],
+        max_archive_json_bytes=app.config["MAX_ARCHIVE_JSON_BYTES"],
+        max_archive_total_bytes=app.config["MAX_ARCHIVE_TOTAL_BYTES"],
     )
 
     app.register_blueprint(ui_bp)
@@ -72,6 +76,22 @@ def create_app() -> Flask:
             token = secrets.token_urlsafe(32)
             session["_csrf_token"] = token
         return {"csrf_token": token, "auth_required": bool(app.config.get("BLACKTAPE_PASSWORD"))}
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_request_entity_too_large(_error: RequestEntityTooLarge):
+        return {
+            "status": "ERROR",
+            "message": "Upload exceeds the server size limit.",
+        }, 413
+
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(error: HTTPException):
+        if request.path.startswith("/api/") or request.path == "/upload":
+            return {
+                "status": "ERROR",
+                "message": error.description or "Request failed.",
+            }, error.code
+        return error
 
     app.extensions["blacktape_compare_digest"] = compare_digest
     return app

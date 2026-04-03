@@ -206,9 +206,15 @@
 }
 
 @media (max-width: 720px) {
+    .dashboard-shell {
+        height: auto;
+        min-height: auto;
+    }
+
     .dashboard-grid {
         grid-template-columns: 1fr;
         gap: 12px;
+        height: auto;
     }
 
     .dropzone {
@@ -230,6 +236,16 @@
         grid-template-columns: 1fr;
     }
 
+    .upload-panel,
+    .feed-panel,
+    .counters-panel {
+        min-height: auto;
+    }
+
+    .feed-stream {
+        max-height: 42vh;
+    }
+
     .feed-entry {
         grid-template-columns: 1fr;
         gap: 6px;
@@ -245,5 +261,17 @@
     .feed-note,
     .counter-meta strong {
         font-size: 0.74rem;
+    }
+
+    .dropzone {
+        margin: 0 12px 12px;
+        padding: 20px 14px;
+    }
+
+    .feed-stream,
+    .counter-grid,
+    .counter-meta {
+        padding-left: 12px;
+        padding-right: 12px;
     }
 }
