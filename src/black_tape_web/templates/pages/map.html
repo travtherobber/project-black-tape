@@ -46,6 +46,10 @@
         </aside>
 
         <div class="map-container-card">
+            <button class="selector-pill mobile-map-settings-toggle" id="mobile-map-settings-toggle" type="button" onclick="toggleMobileMapSettings()">
+                Settings
+            </button>
+            <div class="mobile-map-status" id="mobile-map-status">0 points visible</div>
             <section class="map-hud-overlay">
                 <article class="map-summary-card map-summary-card-primary">
                     <div class="micro-label">Map</div>
@@ -119,6 +123,7 @@
     let sidebarView = "days";
     let markerMap = new Map();
     let activePointKey = "";
+    let mobileMapSettingsOpen = false;
     let selectedLayers = new Set(["location_history", "memories_history", "google_location_history", "google_timeline_edits"]);
     const layerLabelMap = {
         location_history: "Snap Location History",
@@ -257,6 +262,13 @@
         if (view === "points") populatePointList();
     }
 
+    function toggleMobileMapSettings(forceState) {
+        const wrapper = document.querySelector(".map-page-wrapper");
+        const nextState = typeof forceState === "boolean" ? forceState : !mobileMapSettingsOpen;
+        mobileMapSettingsOpen = nextState;
+        wrapper?.classList.toggle("mobile-settings-open", nextState);
+    }
+
     function populateDayList() {
         const list = document.getElementById("dayList");
         list.innerHTML = "";
@@ -374,6 +386,10 @@
         const filteredCount = getFilteredVisiblePoints().length;
         document.getElementById("point-count").textContent = String(filteredCount);
         document.getElementById("day-filter-count").textContent = String(selectedDays.size);
+        const mobileStatus = document.getElementById("mobile-map-status");
+        if (mobileStatus) {
+            mobileStatus.textContent = `${filteredCount} point${filteredCount === 1 ? "" : "s"} visible`;
+        }
         document.getElementById("filter-hint").textContent = selectedDays.size
             ? `${selectedDays.size} day filter${selectedDays.size === 1 ? "" : "s"} active across ${selectedLayers.size} selected layer${selectedLayers.size === 1 ? "" : "s"}.`
             : "Choose one or more days to render points on the map.";
@@ -575,6 +591,7 @@
     });
 
     window.stepPointSelection = stepPointSelection;
+    window.toggleMobileMapSettings = toggleMobileMapSettings;
     window.toggleMapLayer = toggleMapLayer;
     window.toggleActionOverlay = toggleActionOverlay;
 </script>

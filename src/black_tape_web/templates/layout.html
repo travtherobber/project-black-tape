@@ -70,6 +70,24 @@
                 <button class="ghost-button" id="vault-retention-reset" type="button">Reset Retention</button>
             </div>
 
+            <div class="sidebar-section sidebar-readout-group">
+                <div class="micro-label">Ingestion Status</div>
+                <div class="sidebar-readout processing-readout" id="processing-readout" data-state="idle">
+                    <div class="processing-head">
+                        <span class="processing-spinner" id="processing-spinner" aria-hidden="true"></span>
+                        <div class="processing-copy">
+                            <strong id="processing-label">Idle</strong>
+                            <span class="sidebar-readout-note" id="processing-note">No active ingestion job.</span>
+                        </div>
+                    </div>
+                    <div class="processing-bar" aria-hidden="true">
+                        <span class="processing-bar-fill" id="processing-bar-fill"></span>
+                    </div>
+                    <div class="processing-metrics" id="processing-metrics">0 files, 0 messages, 0 GPS</div>
+                    <div class="processing-warning" id="processing-warning" hidden>Internal navigation stays available. Avoid browser refresh while indexing.</div>
+                </div>
+            </div>
+
             <div class="sidebar-footer">
                 {% if auth_required %}
                 <form method="post" action="{{ url_for('ui.logout') }}">

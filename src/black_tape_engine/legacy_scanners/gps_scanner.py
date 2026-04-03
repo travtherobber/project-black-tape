@@ -19,6 +19,14 @@ class GPSScanner(BaseScanner):
         lowered = filename.lower()
         if "timeline edits" in lowered or "timeline_edits" in lowered:
             return "google"
+        if "takeout" in lowered:
+            return "google"
+        if "mydata" in lowered:
+            return "snapchat"
+        if "snapchat/" in lowered or lowered.startswith("snapchat"):
+            return "snapchat"
+        if "google/" in lowered or lowered.startswith("google"):
+            return "google"
         if not isinstance(data, dict):
             return "unknown"
 

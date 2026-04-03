@@ -193,6 +193,11 @@
     display: flex;
 }
 
+.mobile-map-settings-toggle,
+.mobile-map-status {
+    display: none;
+}
+
 .map-hud-overlay {
     position: absolute;
     top: 14px;
@@ -314,46 +319,123 @@
 
 @media (max-width: 720px) {
     .map-page-wrapper {
-        gap: 12px;
+        gap: 10px;
         height: auto;
     }
 
-    .map-hud-overlay,
-    .intel-content {
-        grid-template-columns: 1fr;
+    .main-map-layout {
+        display: block;
     }
 
-    .intel-header,
-    .intel-controls {
-        flex-direction: column;
-        align-items: stretch;
+    .map-toolbar {
+        display: none;
     }
 
-    .map-toolbar,
-    .chrono-sidebar,
-    .intel-box-card {
+    .map-page-wrapper.mobile-settings-open .map-toolbar {
+        display: grid;
+        position: absolute;
+        top: 56px;
+        left: 10px;
+        right: 10px;
+        z-index: 620;
+        gap: 12px;
+        padding: 14px;
+        max-height: calc(100vh - 160px);
+        overflow: auto;
+    }
+
+    .map-page-wrapper.mobile-settings-open .toolbar-group,
+    .map-page-wrapper.mobile-settings-open .layer-toggle-group,
+    .map-page-wrapper.mobile-settings-open .view-toggle-group {
+        display: grid;
+        gap: 10px;
+    }
+
+    .map-page-wrapper.mobile-settings-open .layer-toggle-btn,
+    .map-page-wrapper.mobile-settings-open .selector-pill,
+    .map-page-wrapper.mobile-settings-open .view-toggle-btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .chrono-sidebar {
+        display: none;
+    }
+
+    .map-page-wrapper.mobile-settings-open .chrono-sidebar {
+        display: grid;
+        position: absolute;
+        top: 312px;
+        left: 10px;
+        right: 10px;
+        z-index: 610;
+        max-height: calc(100vh - 420px);
         padding: 14px;
     }
 
     .map-hud-overlay {
-        position: static;
-        padding: 14px 14px 0;
-        z-index: 1;
-        gap: 8px;
+        display: none;
     }
 
-    .map-toolbar,
-    .toolbar-group,
-    .layer-toggle-group,
-    .view-toggle-group {
-        flex-direction: column;
-        align-items: stretch;
+    .mobile-map-settings-toggle {
+        display: inline-flex;
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 630;
+        min-height: 38px;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(12px);
     }
 
-    .layer-toggle-group,
-    .view-toggle-group {
+    .mobile-map-status {
+        display: block;
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        z-index: 630;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(132, 208, 214, 0.18);
+        background: rgba(3, 11, 14, 0.78);
+        color: var(--text-primary);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+    }
+
+    #map-canvas {
+        min-height: 62vh;
+    }
+
+    .intel-box-card {
+        padding: 14px;
+    }
+
+    .intel-header {
         display: grid;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .intel-controls {
+        justify-content: space-between;
+    }
+
+    .intel-content {
         grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .intel-item:not(:first-child):not(:nth-child(2)):not(:nth-child(6)) {
+        display: none;
+    }
+
+    .intel-item {
+        padding: 10px 12px;
+        border: 1px solid rgba(114, 179, 187, 0.1);
+        border-radius: 10px;
+        background: rgba(4, 11, 14, 0.16);
     }
 
     .toggle-container {
@@ -361,32 +443,23 @@
         justify-content: space-between;
     }
 
-    #map-canvas {
-        min-height: 360px;
-    }
-
     .scroll-container {
-        max-height: 34vh;
-    }
-
-    .day-item,
-    .point-item,
-    .map-summary-card {
-        padding: 12px;
+        max-height: 24vh;
     }
 }
 
 @media (max-width: 520px) {
-    .map-toolbar {
-        gap: 12px;
+    .map-page-wrapper.mobile-settings-open .map-toolbar {
+        top: 52px;
+        left: 8px;
+        right: 8px;
     }
 
-    .layer-toggle-btn,
-    .selector-pill,
-    .view-toggle-btn,
-    .intel-nav-button {
-        width: 100%;
-        min-width: 0;
+    .map-page-wrapper.mobile-settings-open .chrono-sidebar {
+        top: 300px;
+        left: 8px;
+        right: 8px;
+        max-height: calc(100vh - 390px);
     }
 
     .intel-content {

@@ -81,6 +81,20 @@ function initGlobalReadouts() {
 }
 
 let vaultRetentionTimer = null;
+const processingState = {
+    active: false,
+    status: "IDLE",
+    jobId: localStorage.getItem("blacktape_job_id") || "",
+};
+const swipePages = [
+    { page: "dashboard", path: "/dashboard" },
+    { page: "chat", path: "/chats" },
+    { page: "map", path: "/map" },
+    { page: "friends", path: "/friends" },
+    { page: "timeline", path: "/timeline" },
+    { page: "analytics", path: "/analytics" },
+    { page: "explore", path: "/explore" },
+];
 
 function formatCountdown(secondsRemaining) {
     if (secondsRemaining <= 0) {
@@ -133,6 +147,74 @@ async function fetchVaultRetentionStatus() {
     }
 }
 
+function getProcessingProgress(statusPayload) {
+    const status = statusPayload?.status || "IDLE";
+    if (status === "COMPLETE") return 1;
+    if (status === "FAILED" || status === "ERROR") return 1;
+
+    const fileCount = Number(statusPayload?.file_count || 0);
+    const filesProcessed = Number(statusPayload?.files_processed || 0);
+    if (status === "PROCESSING" && fileCount > 0) {
+        const fileRatio = Math.max(0, Math.min(1, filesProcessed / fileCount));
+        return Math.max(0.08, fileRatio * 0.92);
+    }
+
+    return 0;
+}
+
+function updateProcessingUi(statusPayload) {
+    const readout = document.getElementById("processing-readout");
+    const label = document.getElementById("processing-label");
+    const note = document.getElementById("processing-note");
+    const fill = document.getElementById("processing-bar-fill");
+    const metrics = document.getElementById("processing-metrics");
+    const warning = document.getElementById("processing-warning");
+    if (!readout || !label || !note || !fill || !metrics || !warning) return;
+
+    const status = statusPayload?.status || "IDLE";
+    const fileCount = Number(statusPayload?.file_count || 0);
+    const filesProcessed = Number(statusPayload?.files_processed || 0);
+    const messages = Number(statusPayload?.messages_found || 0);
+    const gps = Number(statusPayload?.gps_found || 0);
+    const sourceFiles = Array.isArray(statusPayload?.source_files) ? statusPayload.source_files : [];
+    const activeFile = statusPayload?.active_file || sourceFiles[filesProcessed] || sourceFiles[0] || "";
+    const progress = getProcessingProgress(statusPayload);
+
+    processingState.status = status;
+    processingState.active = status === "PROCESSING";
+    readout.dataset.state = status.toLowerCase();
+    fill.style.width = `${Math.round(progress * 100)}%`;
+
+    if (status === "PROCESSING") {
+        label.textContent = "Processing";
+        note.textContent = activeFile
+            ? `Indexing ${activeFile}`
+            : "Signals are being parsed and merged into the vault.";
+        metrics.textContent = `${filesProcessed}/${fileCount || sourceFiles.length || "?"} files, ${messages} messages, ${gps} GPS`;
+        warning.hidden = false;
+        return;
+    }
+
+    warning.hidden = true;
+    if (status === "COMPLETE") {
+        label.textContent = "Complete";
+        note.textContent = "Vault is ready to browse.";
+        metrics.textContent = `${sourceFiles.length || fileCount || 1} files, ${messages} messages, ${gps} GPS`;
+        return;
+    }
+
+    if (status === "FAILED" || status === "ERROR") {
+        label.textContent = "Fault";
+        note.textContent = statusPayload?.message || "Ingestion stopped before completion.";
+        metrics.textContent = `${fileCount || sourceFiles.length || 0} files, ${messages} messages, ${gps} GPS`;
+        return;
+    }
+
+    label.textContent = "Idle";
+    note.textContent = "No active ingestion job.";
+    metrics.textContent = "0 files, 0 messages, 0 GPS";
+}
+
 function initVaultRetentionSidebar() {
     const resetButton = document.getElementById("vault-retention-reset");
     const labelNode = document.getElementById("vault-retention-label");
@@ -141,6 +223,8 @@ function initVaultRetentionSidebar() {
     const refresh = async () => {
         const payload = await fetchVaultRetentionStatus();
         updateRetentionUi(payload);
+        updateProcessingUi(payload);
+        window.dispatchEvent(new CustomEvent("vaultStatusUpdated", { detail: payload || { status: "IDLE" } }));
     };
 
     refresh();
@@ -162,6 +246,68 @@ function initVaultRetentionSidebar() {
             }, 150);
         }
     });
+}
+
+function initProcessingGuards() {
+    const shouldWarnReload = (event) => {
+        const isReloadShortcut = event.key === "F5"
+            || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "r");
+        if (!isReloadShortcut || !processingState.active) return;
+        const confirmed = window.confirm("Ingestion is still running. Reloading now may interrupt your view. Reload anyway?");
+        if (!confirmed) {
+            event.preventDefault();
+        }
+    };
+
+    window.addEventListener("keydown", shouldWarnReload, { capture: true });
+}
+
+function initSwipeNavigation() {
+    if (!window.matchMedia("(max-width: 720px)").matches) return;
+    const pageName = document.body.dataset.page;
+    const pageIndex = swipePages.findIndex((entry) => entry.page === pageName);
+    if (pageIndex === -1) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchTarget = null;
+    let swipeEligible = false;
+    const edgeThreshold = 24;
+
+    document.addEventListener("touchstart", (event) => {
+        if (event.touches.length !== 1) return;
+        const touch = event.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchTarget = event.target;
+        swipeEligible = touch.clientX <= edgeThreshold || touch.clientX >= (window.innerWidth - edgeThreshold);
+    }, { passive: true });
+
+    document.addEventListener("touchend", (event) => {
+        if (!touchTarget || event.changedTouches.length !== 1) return;
+        if (!swipeEligible) {
+            touchTarget = null;
+            return;
+        }
+        if (touchTarget.closest("input, textarea, select, button, a, #map-canvas")) {
+            touchTarget = null;
+            return;
+        }
+
+        const touch = event.changedTouches[0];
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+        touchTarget = null;
+        swipeEligible = false;
+
+        if (Math.abs(deltaX) < 90 || Math.abs(deltaY) > 60) return;
+
+        const nextIndex = deltaX < 0 ? pageIndex + 1 : pageIndex - 1;
+        const nextPage = swipePages[nextIndex];
+        if (nextPage) {
+            window.location.href = nextPage.path;
+        }
+    }, { passive: true });
 }
 
 function getCsrfToken() {
@@ -223,6 +369,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initAbyssBackground();
     initGlobalReadouts();
     initVaultRetentionSidebar();
+    initProcessingGuards();
+    initSwipeNavigation();
     requestAnimationFrame(() => document.body.classList.add("is-ready"));
 
     const timezoneSelect = document.getElementById("timezone-select");

@@ -75,8 +75,9 @@ class Orchestrator:
                 logger.info(f"[Job {job_id}] Siphoning ZIP Archive: {filename}")
 
                 for sub_name, data in self.zip_ingestor.ingest_zip(file_path):
+                    source_label = f"{filename}::{sub_name}"
                     # Chat Siphon
-                    signals = self._extract_messages(sub_name, data)
+                    signals = self._extract_messages(source_label, data)
                     for cid, msgs in signals.items():
                         if cid not in vault_structure["chats"]:
                             vault_structure["chats"][cid] = []
@@ -84,19 +85,19 @@ class Orchestrator:
                         msg_total += len(msgs)
 
                     # GPS Siphon
-                    gps_points = self.gps_scanner.scan(sub_name, data)
+                    gps_points = self.gps_scanner.scan(source_label, data)
                     if gps_points:
                         vault_structure["gps"].extend(gps_points)
                         gps_total += len(gps_points)
 
-                    google_signals = self.google_signal_scanner.scan(sub_name, data)
+                    google_signals = self.google_signal_scanner.scan(source_label, data)
                     if google_signals:
                         vault_structure["google_signals"].extend(google_signals)
 
-                    generic_payload = self.generic_scanner.scan(sub_name, data)
+                    generic_payload = self.generic_scanner.scan(source_label, data)
                     self._merge_identity(vault_structure["identity"], generic_payload)
 
-                    self._merge_friends(vault_structure["friends"], self.friends_scanner.scan(sub_name, data))
+                    self._merge_friends(vault_structure["friends"], self.friends_scanner.scan(source_label, data))
 
                     self._update_job_progress(job_id, msg_total, gps_total)
                     time.sleep(0.01)

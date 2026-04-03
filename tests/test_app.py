@@ -14,6 +14,7 @@ if str(SRC) not in sys.path:
 
 from black_tape_web import create_app
 from black_tape_engine.legacy_ingesters.zip_ingestor import ZipIngestor
+from black_tape_engine.legacy_scanners.gps_scanner import GPSScanner
 
 
 class AppTestCase(unittest.TestCase):
@@ -250,6 +251,43 @@ class AppTestCase(unittest.TestCase):
 
         self.assertTrue(extracted)
         self.assertTrue(any(name.endswith("chat_history.json") for name, _data in extracted))
+
+    def test_snapchat_location_history_keeps_snapchat_source_system(self):
+        payload = {
+            "Location History": [
+                ["2025-02-03 12:30:00 UTC", "28.061, -82.413"],
+            ]
+        }
+
+        points = GPSScanner().scan("snapchat/location_history.json", payload)
+
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0]["source_system"], "snapchat")
+        self.assertEqual(points[0]["layer"], "location_history")
+
+    def test_mydata_archive_name_marks_location_history_as_snapchat(self):
+        payload = {
+            "Location History": [
+                ["2025-02-03 12:30:00 UTC", "28.061, -82.413"],
+            ]
+        }
+
+        points = GPSScanner().scan("MyData.zip::location_history.json", payload)
+
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0]["source_system"], "snapchat")
+
+    def test_takeout_archive_name_marks_location_history_as_google(self):
+        payload = {
+            "Location History": [
+                ["2025-02-03 12:30:00 UTC", "28.061, -82.413"],
+            ]
+        }
+
+        points = GPSScanner().scan("Takeout.zip::Location History.json", payload)
+
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0]["source_system"], "google")
 
     def test_upload_archive_populates_conversations_and_gps(self):
         with self.client.session_transaction() as session:

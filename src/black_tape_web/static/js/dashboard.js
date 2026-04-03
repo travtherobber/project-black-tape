@@ -97,6 +97,26 @@ function renderFeed() {
     setText("feed-state", dashboardState.activeStatus);
 }
 
+function updateDashboardProcessing(status) {
+    if (!status || !byId("dropzone-status")) return;
+    if (status.status === "PROCESSING") {
+        const filesProcessed = Number(status.files_processed || 0);
+        const fileCount = Number(status.file_count || 0);
+        const detail = fileCount > 0 ? `${filesProcessed}/${fileCount} FILES INDEXING` : "INDEXING_PAYLOAD";
+        setText("dropzone-status", detail);
+        return;
+    }
+
+    if (status.status === "COMPLETE") {
+        setText("dropzone-status", "VAULT_LINK_ACTIVE");
+        return;
+    }
+
+    if (status.status === "FAILED" || status.status === "ERROR") {
+        setText("dropzone-status", "UPLOAD_FAULT_DETECTED");
+    }
+}
+
 function updateCounters() {
     setText("messages-total", String(dashboardState.summary.messages).padStart(4, "0"));
     setText("conversations-total", String(dashboardState.summary.conversations).padStart(2, "0"));
@@ -310,3 +330,4 @@ async function bootstrapDashboard() {
 }
 
 document.addEventListener("DOMContentLoaded", bootstrapDashboard);
+window.addEventListener("vaultStatusUpdated", (event) => updateDashboardProcessing(event.detail));
