@@ -17,11 +17,11 @@ services:
       - key: BLACKTAPE_CACHE_TTL
         value: "900"
       - key: WEB_CONCURRENCY
-        value: "2"
+        value: "1"
       - key: GUNICORN_THREADS
-        value: "4"
+        value: "2"
       - key: GUNICORN_TIMEOUT
-        value: "120"
+        value: "180"
       - key: SECRET_KEY
         sync: false
       - key: BLACKTAPE_PASSWORD
